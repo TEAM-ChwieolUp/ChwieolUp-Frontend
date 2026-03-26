@@ -1,0 +1,20 @@
+language: 'ko'
+reviews:
+  profile: 'chill'
+  path_filters:
+    - '!.next/**'
+    - '!node_modules/**'
+    - '!public/**'
+    - '!out/**'
+    - '!.eslintrc.json'
+    - '!package-lock.json'
+    - '!yarn.lock'
+    - '!pnpm-lock.yaml'
+
+  instructions: >
+    당신은 숙련된 Next.js 및 React 전문가입니다. 다음 사항을 중점적으로 리뷰해 주세요:
+    1. **App Router 최적화**: 'use client'와 'use server' 지시어가 적절한 위치에 있는지 확인해 주세요. 불필요한 Client Component 사용을 지양합니다.
+    2. **성능**: Next.js의 `Image`, `Link`, `Script` 컴포넌트가 적절히 사용되었는지 확인해 주세요.
+    3. **Data Fetching**: Server Components에서의 fetch 사용 및 캐싱 전략이 적절한지 검토해 주세요.
+    4. **SEO 및 Metadata**: 메타데이터 정의가 올바른지 확인해 주세요.
+    5. **타입 안정성**: TypeScript 타입 정의가 명확한지 확인해 주세요.
