@@ -7,7 +7,7 @@
   height: 100vh;
   padding: 20px 16px 24px;
   border-right: 1px solid #e5e7eb;
-  background-color: #ffffff;
+  background-color: #fbfcfe;
   box-sizing: border-box;
   position: sticky;
   top: 0;
@@ -16,14 +16,15 @@
 .content {
   display: flex;
   flex-direction: column;
-  gap: 32px;
+  gap: 28px;
 }
 
 .logoCard {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 0 4px;
+  padding: 0 4px 20px;
+  border-bottom: 1px solid #eef2f7;
 }
 
 .logoImage {
@@ -36,16 +37,16 @@
 .nav {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 6px;
 }
 
 .link {
+  position: relative;
   display: flex;
   align-items: center;
   gap: 12px;
   min-height: 48px;
   padding: 12px 14px;
-  border: 1px solid transparent;
   border-radius: 16px;
   color: #4b5563;
   text-decoration: none;
@@ -54,12 +55,10 @@
   transition:
     background-color 0.2s ease,
     color 0.2s ease,
-    border-color 0.2s ease,
     transform 0.2s ease,
     box-shadow 0.2s ease;
 
   &:hover {
-    border-color: #dbe7f8;
     background-color: #ffffff;
     color: #1f2937;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
@@ -67,25 +66,57 @@
   }
 }
 
-.icon {
-  width: 20px;
-  height: 20px;
+.iconWrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 12px;
+  background-color: #f3f4f6;
   flex-shrink: 0;
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+.icon {
+  width: 18px;
+  height: 18px;
+}
+
+.label {
+  line-height: 1;
 }
 
 .active {
-  border-color: #bfdbfe;
   background-color: #eff6ff;
   color: #1d4ed8;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+
+  &::before {
+    content: '';
+    position: absolute;
+    left: -8px;
+    top: 10px;
+    bottom: 10px;
+    width: 3px;
+    border-radius: 999px;
+    background-color: #3b82f6;
+  }
+}
+
+.active .iconWrap {
+  background-color: #dbeafe;
 }
 
 .profileCard {
   display: flex;
   align-items: center;
   gap: 12px;
-  padding: 12px 14px;
-  border-top: 1px solid #f3f4f6;
+  padding: 14px;
+  border: 1px solid #e8eef7;
+  border-radius: 18px;
+  background-color: #ffffff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.04);
 }
 
 .profileAvatar {
@@ -120,6 +151,10 @@
   color: #6b7280;
   font-size: 13px;
   line-height: 1.4;
+  width: fit-content;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background-color: #f3f4f6;
 }
 
 @media (max-width: 1024px) {

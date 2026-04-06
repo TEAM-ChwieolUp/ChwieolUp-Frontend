@@ -69,8 +69,10 @@ export default function Sidebar() {
                 href={item.href}
                 className={`${styles.link} ${isActive ? styles.active : ''}`}
               >
-                <Icon className={styles.icon} aria-hidden='true' />
-                <span>{item.label}</span>
+                <span className={styles.iconWrap}>
+                  <Icon className={styles.icon} aria-hidden='true' />
+                </span>
+                <span className={styles.label}>{item.label}</span>
               </Link>
             );
           })}

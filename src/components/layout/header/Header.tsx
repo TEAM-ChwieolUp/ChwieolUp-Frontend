@@ -115,6 +115,7 @@ export default function Header() {
             }
           >
             <Bell className={styles.actionIcon} aria-hidden='true' />
+            <span className={styles.notificationDot} aria-hidden='true' />
           </button>
 
           <button

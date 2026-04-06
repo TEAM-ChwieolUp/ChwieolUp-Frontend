@@ -1,4 +1,7 @@
 .header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -6,26 +9,28 @@
   min-height: 80px;
   padding: 20px 32px;
   border-bottom: 1px solid #e5e7eb;
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: rgba(255, 255, 255, 0.94);
   box-sizing: border-box;
   backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
 }
 
 .title {
   margin: 0;
   color: #111827;
   font-size: 26px;
-  font-weight: 500;
+  font-weight: 600;
 }
 
 .actions {
   position: relative;
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 6px;
 }
 
 .iconButton {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -53,6 +58,16 @@
   height: 18px;
 }
 
+.notificationDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: #ef4444;
+}
+
 .popover {
   position: absolute;
   top: calc(100% + 12px);
@@ -71,6 +86,7 @@
   justify-content: space-between;
   gap: 16px;
   padding: 20px 20px 12px;
+  border-bottom: 1px solid #f3f4f6;
 }
 
 .popoverTitle {
@@ -89,7 +105,7 @@
   padding: 0;
   border: 0;
   border-radius: 999px;
-  background-color: #f3f4f6;
+  background-color: transparent;
   color: #4b5563;
   cursor: pointer;
 }
@@ -102,8 +118,8 @@
 .notificationList {
   display: flex;
   flex-direction: column;
-  gap: 12px;
-  padding: 8px 20px 20px;
+  gap: 10px;
+  padding: 16px 20px 20px;
 }
 
 .notificationItem {
@@ -111,7 +127,8 @@
   flex-direction: column;
   gap: 6px;
   padding: 16px;
-  border-radius: 16px;
+  border: 1px solid #f1f5f9;
+  border-radius: 18px;
   background-color: #f9fafb;
 }
 
@@ -130,7 +147,7 @@
 
 .helpText {
   margin: 0;
-  padding: 8px 20px 24px;
+  padding: 16px 20px 24px;
   color: #4b5563;
   font-size: 15px;
   line-height: 1.7;
