@@ -1,13 +1,22 @@
 .sidebar {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
   width: 272px;
   min-width: 272px;
   height: 100vh;
-  padding: 0 16px;
+  padding: 20px 16px 24px;
   border-right: 1px solid #e5e7eb;
   background-color: #ffffff;
   box-sizing: border-box;
   position: sticky;
   top: 0;
+}
+
+.content {
+  display: flex;
+  flex-direction: column;
+  gap: 32px;
 }
 
 .logoCard {
@@ -69,6 +78,48 @@
   background-color: #eff6ff;
   color: #1d4ed8;
   box-shadow: 0 4px 12px rgba(59, 130, 246, 0.12);
+}
+
+.profileCard {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border-top: 1px solid #f3f4f6;
+}
+
+.profileAvatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 999px;
+  background-color: #eff6ff;
+  color: #1d4ed8;
+  font-size: 14px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+.profileText {
+  display: flex;
+  min-width: 0;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.profileName {
+  color: #111827;
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.profileType {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.4;
 }
 
 @media (max-width: 1024px) {

@@ -46,34 +46,47 @@ export default function Sidebar() {
 
   return (
     <aside className={styles.sidebar}>
-      <div className={styles.logoCard}>
-        <Image
-          src='/logo/logo_temp.png'
-          alt='취얼업 메인 로고'
-          width={190}
-          height={50}
-          className={styles.logoImage}
-          priority
-        />
+      <div className={styles.content}>
+        <div className={styles.logoCard}>
+          <Image
+            src='/logo/logo_temp.png'
+            alt='취얼업 메인 로고'
+            width={190}
+            height={50}
+            className={styles.logoImage}
+            priority
+          />
+        </div>
+
+        <nav className={styles.nav}>
+          {menuItems.map((item) => {
+            const isActive = pathname === item.href;
+            const Icon = item.icon;
+
+            return (
+              <Link
+                key={item.href}
+                href={item.href}
+                className={`${styles.link} ${isActive ? styles.active : ''}`}
+              >
+                <Icon className={styles.icon} aria-hidden='true' />
+                <span>{item.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
       </div>
 
-      <nav className={styles.nav}>
-        {menuItems.map((item) => {
-          const isActive = pathname === item.href;
-          const Icon = item.icon;
+      <div className={styles.profileCard}>
+        <div className={styles.profileAvatar} aria-hidden='true'>
+          MW
+        </div>
 
-          return (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`${styles.link} ${isActive ? styles.active : ''}`}
-            >
-              <Icon className={styles.icon} aria-hidden='true' />
-              <span>{item.label}</span>
-            </Link>
-          );
-        })}
-      </nav>
+        <div className={styles.profileText}>
+          <strong className={styles.profileName}>Minwoo</strong>
+          <span className={styles.profileType}>Premium Member</span>
+        </div>
+      </div>
     </aside>
   );
 }
