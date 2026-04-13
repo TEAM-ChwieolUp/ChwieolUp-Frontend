@@ -1,0 +1,169 @@
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  min-height: 80px;
+  padding: 20px 32px;
+  border-bottom: 1px solid #e5e7eb;
+  background-color: rgba(255, 255, 255, 0.94);
+  box-sizing: border-box;
+  backdrop-filter: blur(12px);
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.04);
+}
+
+.title {
+  margin: 0;
+  color: #111827;
+  font-size: 26px;
+  font-weight: 600;
+}
+
+.actions {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.iconButton {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-height: 40px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background-color: transparent;
+  box-shadow: none;
+  color: #6b7280;
+  cursor: pointer;
+  transition:
+    color 0.2s ease,
+    background-color 0.2s ease;
+
+  &:hover {
+    color: #1d4ed8;
+    background-color: rgba(59, 130, 246, 0.06);
+  }
+}
+
+.actionIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.notificationDot {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background-color: #ef4444;
+}
+
+.popover {
+  position: absolute;
+  top: calc(100% + 12px);
+  right: 0;
+  z-index: 20;
+  width: min(100vw - 40px, 360px);
+  border: 1px solid #e5e7eb;
+  border-radius: 20px;
+  background-color: #ffffff;
+  box-shadow: 0 24px 48px rgba(15, 23, 42, 0.14);
+}
+
+.popoverHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.popoverTitle {
+  margin: 0;
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.closeButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background-color: transparent;
+  color: #4b5563;
+  cursor: pointer;
+}
+
+.closeIcon {
+  width: 18px;
+  height: 18px;
+}
+
+.notificationList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 16px 20px 20px;
+}
+
+.notificationItem {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 16px;
+  border: 1px solid #f1f5f9;
+  border-radius: 18px;
+  background-color: #f9fafb;
+}
+
+.notificationTitle {
+  color: #111827;
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 1.5;
+}
+
+.notificationTime {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.4;
+}
+
+.helpText {
+  margin: 0;
+  padding: 16px 20px 24px;
+  color: #4b5563;
+  font-size: 15px;
+  line-height: 1.7;
+}
+
+@media (max-width: 820px) {
+  .header {
+    padding: 20px;
+  }
+
+  .title {
+    font-size: 24px;
+  }
+
+  .popover {
+    right: -4px;
+    width: min(100vw - 32px, 320px);
+  }
+}
