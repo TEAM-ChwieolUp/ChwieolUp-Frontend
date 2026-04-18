@@ -1,0 +1,123 @@
+.card {
+  position: relative;
+  background: #ffffff;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.18);
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  box-shadow:
+    0 2px 8px rgba(15, 23, 42, 0.05),
+    0 1px 2px rgba(15, 23, 42, 0.04);
+  transition: box-shadow 0.15s, transform 0.1s;
+
+  &:hover {
+    box-shadow:
+      0 6px 20px rgba(15, 23, 42, 0.1),
+      0 2px 6px rgba(15, 23, 42, 0.06);
+    transform: translateY(-1px);
+  }
+}
+
+.resultBadge {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  padding: 3px 10px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.pass {
+  background: #dcfce7;
+  color: #16a34a;
+}
+
+.fail {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.company {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+  padding-right: 56px;
+}
+
+.position {
+  margin: 0;
+  font-size: 0.82rem;
+  color: #64748b;
+}
+
+.date {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #94a3b8;
+}
+
+.tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 2px;
+}
+
+.tag {
+  padding: 3px 9px;
+  border-radius: 999px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  background: #f1f5f9;
+  color: #475569;
+  border: 1px solid #e2e8f0;
+}
+
+.urgencyBar {
+  width: 100%;
+  padding: 6px 10px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-align: center;
+  margin-top: 2px;
+  color: #ffffff;
+}
+
+.danger {
+  background: #ef4444;
+}
+
+.warning {
+  background: #f97316;
+}
+
+.nextAction {
+  margin: 0;
+  font-size: 0.78rem;
+  color: #6366f1;
+  font-weight: 500;
+}
+
+.stageSelect {
+  margin-top: 4px;
+  width: 100%;
+  padding: 6px 10px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  font-size: 0.78rem;
+  color: #475569;
+  background: #f8fafc;
+  cursor: pointer;
+  outline: none;
+  transition: border-color 0.15s;
+
+  &:focus {
+    border-color: #6366f1;
+  }
+}
