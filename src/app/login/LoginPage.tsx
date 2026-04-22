@@ -1,6 +1,7 @@
 'use client';
 
 import { ArrowRight } from 'lucide-react';
+import Button from '@/components/common/button/Button';
 import { useRouter } from 'next/navigation';
 import styles from './login.module.css';
 
@@ -87,10 +88,14 @@ export default function LoginPage() {
               />
             </label>
 
-            <button className={styles.button} type='button' onClick={handleLogin}>
+            <Button
+              fullWidth
+              type='button'
+              onClick={handleLogin}
+              rightIcon={<ArrowRight aria-hidden='true' />}
+            >
               로그인하고 시작하기
-              <ArrowRight className={styles.buttonIcon} aria-hidden='true' />
-            </button>
+            </Button>
           </form>
         </div>
       </section>
