@@ -3,4 +3,30 @@
   background-color: #2170e4;
   border-radius: 15px;
   padding: 2rem 1rem;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+  gap: 0.4rem;
+
+  .date {
+    padding: 0.4rem 0.6rem;
+    border-radius: 15px;
+    background-color: #ffffff33;
+    color: #fff;
+    font-weight: 700;
+    font-size: 0.8em;
+    margin-top: 1rem;
+  }
+
+  .title {
+    color: #fff;
+    font-size: 1.8em;
+    font-weight: 500;
+  }
+
+  .description {
+    color: #fff;
+    margin-bottom: 1rem;
+  }
 }
