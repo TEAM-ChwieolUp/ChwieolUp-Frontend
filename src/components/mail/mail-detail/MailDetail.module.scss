@@ -180,40 +180,53 @@
   .interviewNote {
     display: flex;
     flex-direction: column;
-    gap: 8px;
+    gap: 12px;
     margin: 16px 0;
-    padding: 24px 24px 24px 28px;
-    border-left: 4px solid #006c49;
-    border-radius: 16px;
-    background: #f3f4f6;
+    padding: 20px;
+    border: 1px solid #e5e7eb;
+    border-radius: 18px;
+    background: #fafafa;
   }
 
   .noteTitle {
     color: #191c1e;
     font-size: 14px;
-    font-weight: 600;
+    font-weight: 700;
     line-height: 20px;
+    letter-spacing: -0.01em;
   }
 
   .noteList {
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 8px;
   }
 
   .noteItem {
+    display: grid;
+    grid-template-columns: 88px minmax(0, 1fr);
+    align-items: start;
+    gap: 12px;
     margin: 0;
-    color: #424754;
-    font-size: 14px;
-    line-height: 20px;
+    padding: 12px 14px;
+    border-radius: 12px;
+    background: #ffffff;
 
     span {
+      color: #5f6b76;
+      font-size: 12px;
       font-weight: 600;
+      line-height: 20px;
+      letter-spacing: -0.01em;
     }
 
     strong {
-      margin-left: 4px;
-      font-weight: 700;
+      color: #1f2937;
+      font-size: 14px;
+      font-weight: 600;
+      line-height: 20px;
+      letter-spacing: -0.01em;
+      word-break: keep-all;
     }
   }
 
@@ -237,6 +250,11 @@
 
     .bodyContent {
       padding: 28px 22px;
+    }
+
+    .noteItem {
+      grid-template-columns: 1fr;
+      gap: 6px;
     }
   }
 }
