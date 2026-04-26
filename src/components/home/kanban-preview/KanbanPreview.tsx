@@ -1,9 +1,7 @@
-'use client';
-
+import Link from 'next/link';
 import { ArrowRight, Clock3 } from 'lucide-react';
 
 import styles from './KanbanPreview.module.scss';
-import { useRouter } from 'next/navigation';
 
 const kanbanColumns = [
   {
@@ -48,8 +46,6 @@ function getCardClassNames(...classNames: Array<string | false | undefined>) {
 }
 
 export default function KanbanPreview() {
-  const navigate = useRouter();
-
   return (
     <section className={styles.container}>
       <div className={styles.header}>
@@ -57,10 +53,10 @@ export default function KanbanPreview() {
           <h2 className={styles.title}>Kanban Preview</h2>
           <p className={styles.subText}>진행 중인 핵심 채용 파이프라인</p>
         </div>
-        <button type='button' className={styles.fullViewButton}>
-          <span onClick={() => navigate.push('/kanban')}>Full View</span>
+        <Link href='/kanban' className={styles.fullViewButton}>
+          <span>Full View</span>
           <ArrowRight size={16} />
-        </button>
+        </Link>
       </div>
 
       <div className={styles.columns}>

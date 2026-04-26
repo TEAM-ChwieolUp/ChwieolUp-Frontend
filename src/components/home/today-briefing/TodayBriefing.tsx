@@ -1,7 +1,13 @@
+import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
-import Button from '@/components/common/button/Button';
+
 import { TodayBreifingType } from '@/app/api/types/TodayBriefingType';
+import buttonStyles from '@/components/common/button/button.module.scss';
 import styles from './TodayBriefing.module.scss';
+
+function getClassName(...classNames: Array<string | false | null | undefined>) {
+  return classNames.filter(Boolean).join(' ');
+}
 
 export default function TodayBriefing({
   datetime,
@@ -29,7 +35,20 @@ export default function TodayBriefing({
         <div className={styles.summary}>
           오늘 확인해야 할 일정을 빠르게 정리했어요.
         </div>
-        <Button rightIcon={<ArrowRight size={18} />}>일정 자세히 보기</Button>
+        <Link
+          href='/calendar'
+          className={getClassName(
+            buttonStyles.button,
+            buttonStyles.primary,
+            buttonStyles.md,
+            styles.ctaLink,
+          )}
+        >
+          <span className={buttonStyles.label}>일정 자세히 보기</span>
+          <span className={buttonStyles.icon} aria-hidden='true'>
+            <ArrowRight size={18} />
+          </span>
+        </Link>
       </div>
     </div>
   );
