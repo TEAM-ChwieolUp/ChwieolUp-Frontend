@@ -1,0 +1,242 @@
+.detail {
+  display: flex;
+  flex-direction: column;
+  gap: 40px;
+
+  .header {
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+  }
+
+  .headerTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+  }
+
+  .statusBadge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 24px;
+    padding: 4px 12px;
+    border-radius: 999px;
+    background: #6cf8bb;
+    color: #00714d;
+    font-size: 10px;
+    font-weight: 600;
+    line-height: 15px;
+    letter-spacing: -0.25px;
+  }
+
+  .receivedLabel {
+    color: #424754;
+    font-size: 10px;
+    font-weight: 700;
+    line-height: 15px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+
+  .subject {
+    margin: 0;
+    color: #191c1e;
+    font-size: clamp(26px, 3vw, 30px);
+    font-weight: 600;
+    line-height: 1.25;
+    word-break: keep-all;
+  }
+
+  .senderCard {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 20px;
+    padding: 16px;
+    border-radius: 16px;
+    background: #f3f4f6;
+  }
+
+  .senderBlock {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 0;
+  }
+
+  .avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: linear-gradient(180deg, #0f70db 0%, #003e82 100%);
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+    color: #ffffff;
+    font-size: 14px;
+    font-weight: 700;
+    flex-shrink: 0;
+  }
+
+  .senderMeta {
+    display: flex;
+    min-width: 0;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .senderLine,
+  .recipientLine {
+    margin: 0;
+    color: #424754;
+    line-height: 20px;
+  }
+
+  .senderLine {
+    font-size: 14px;
+    overflow-wrap: anywhere;
+
+    strong {
+      color: #191c1e;
+      font-weight: 700;
+    }
+  }
+
+  .recipientLine {
+    font-size: 12px;
+    line-height: 16px;
+  }
+
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+
+    button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 36px;
+      height: 36px;
+      padding: 0;
+      border: 0;
+      border-radius: 8px;
+      background: transparent;
+      color: #424754;
+      cursor: pointer;
+      transition:
+        background-color 0.2s ease,
+        color 0.2s ease;
+
+      &:hover {
+        background: rgba(0, 88, 190, 0.08);
+        color: #0058be;
+      }
+    }
+
+    svg {
+      width: 18px;
+      height: 18px;
+    }
+  }
+
+  .bodyCard {
+    border-radius: 24px;
+    background: #ffffff;
+    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+  }
+
+  .bodyContent {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    padding: 48px;
+  }
+
+  .bodyBlock,
+  .closing {
+    display: flex;
+    flex-direction: column;
+
+    p {
+      margin: 0;
+      color: #424754;
+      font-size: 16px;
+      line-height: 26px;
+      word-break: keep-all;
+    }
+
+    &.strong,
+    &.strong p {
+      color: #191c1e;
+      font-weight: 600;
+    }
+  }
+
+  .interviewNote {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin: 16px 0;
+    padding: 24px 24px 24px 28px;
+    border-left: 4px solid #006c49;
+    border-radius: 16px;
+    background: #f3f4f6;
+  }
+
+  .noteTitle {
+    color: #191c1e;
+    font-size: 14px;
+    font-weight: 600;
+    line-height: 20px;
+  }
+
+  .noteList {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+
+  .noteItem {
+    margin: 0;
+    color: #424754;
+    font-size: 14px;
+    line-height: 20px;
+
+    span {
+      font-weight: 600;
+    }
+
+    strong {
+      margin-left: 4px;
+      font-weight: 700;
+    }
+  }
+
+  .closing {
+    padding-top: 16px;
+  }
+}
+
+@media (max-width: 767px) {
+  .detail {
+    gap: 28px;
+
+    .senderCard {
+      flex-direction: column;
+      align-items: stretch;
+    }
+
+    .actions {
+      justify-content: flex-end;
+    }
+
+    .bodyContent {
+      padding: 28px 22px;
+    }
+  }
+}
