@@ -1,6 +1,6 @@
 export interface CountCardType {
   color: 'blue' | 'green' | 'red';
-  icon: string;
+  icon: 'document' | 'event' | 'write';
   subText: string;
   title: string;
   value: string;
