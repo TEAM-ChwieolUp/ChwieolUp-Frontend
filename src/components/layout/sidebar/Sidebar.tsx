@@ -2,16 +2,20 @@
 
 import {
   CalendarDays,
-  Ellipsis,
   House,
-  KanbanSquare,
+  LayoutDashboard,
   NotebookPen,
+  Settings,
 } from 'lucide-react';
-
-import Image from 'next/image';
 import Link from 'next/link';
 import styles from './Sidebar.module.scss';
 import { usePathname } from 'next/navigation';
+import { Manrope } from 'next/font/google';
+
+const manrope = Manrope({
+  subsets: ['latin'],
+  weight: ['400', '600', '700', '800'],
+});
 
 const menuItems = [
   {
@@ -22,7 +26,7 @@ const menuItems = [
   {
     label: '칸반',
     href: '/kanban',
-    icon: KanbanSquare,
+    icon: LayoutDashboard,
   },
   {
     label: '캘린더',
@@ -35,9 +39,9 @@ const menuItems = [
     icon: NotebookPen,
   },
   {
-    label: '더보기',
+    label: '설정',
     href: '/more',
-    icon: Ellipsis,
+    icon: Settings,
   },
 ];
 
@@ -45,22 +49,18 @@ export default function Sidebar() {
   const pathname = usePathname();
 
   return (
-    <aside className={styles.sidebar}>
+    <aside className={`${styles.sidebar} ${manrope.className}`}>
       <div className={styles.content}>
-        <div className={styles.logoCard}>
-          <Image
-            src='/logo/logo_temp.png'
-            alt='취얼업 메인 로고'
-            width={190}
-            height={50}
-            className={styles.logoImage}
-            priority
-          />
+        <div className={styles.logoBlock}>
+          <strong className={styles.brand}>ChwieolUp</strong>
+          <span className={styles.brandCaption}>CAREER ARCHITECT</span>
         </div>
 
         <nav className={styles.nav}>
           {menuItems.map((item) => {
-            const isActive = pathname === item.href;
+            const isActive =
+              pathname === item.href ||
+              (item.href !== '/' && pathname.startsWith(item.href));
             const Icon = item.icon;
 
             return (
@@ -77,17 +77,6 @@ export default function Sidebar() {
             );
           })}
         </nav>
-      </div>
-
-      <div className={styles.profileCard}>
-        <div className={styles.profileAvatar} aria-hidden='true'>
-          MW
-        </div>
-
-        <div className={styles.profileText}>
-          <strong className={styles.profileName}>Minwoo</strong>
-          <span className={styles.profileType}>Premium Member</span>
-        </div>
       </div>
     </aside>
   );
