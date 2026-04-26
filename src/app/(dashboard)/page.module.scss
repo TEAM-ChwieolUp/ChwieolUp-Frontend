@@ -2,7 +2,23 @@
   width: 100%;
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  justify-content: flex-start;
+  align-items: stretch;
   gap: 2rem;
+
+  .row {
+    width: 100%;
+    display: grid;
+    grid-template-columns: minmax(0, 2fr) minmax(18rem, 0.95fr);
+    gap: 1.5rem;
+    align-items: start;
+  }
+}
+
+@media (max-width: 960px) {
+  .container {
+    .row {
+      grid-template-columns: 1fr;
+    }
+  }
 }
