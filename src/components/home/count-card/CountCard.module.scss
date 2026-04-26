@@ -1,0 +1,32 @@
+.container {
+  background-color: #fff;
+  width: 30%;
+  padding: 1rem 1.4rem;
+  display: flex;
+  flex-direction: column;
+  border-radius: 15px;
+
+  .row {
+    width: 100%;
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+
+    .icon {
+      padding: 0.6rem;
+      margin: 1rem 0;
+      border: 1px solid #d9d9d9;
+      border-radius: 12px;
+    }
+  }
+
+  .title {
+    font-weight: 600;
+  }
+
+  .value {
+    font-size: 2em;
+    font-weight: 700;
+  }
+}
