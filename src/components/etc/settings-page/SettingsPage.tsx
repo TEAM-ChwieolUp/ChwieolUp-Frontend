@@ -42,7 +42,7 @@ type CategoryId = (typeof categories)[number]['id'];
 
 export default function SettingsPage() {
   const sliderId = useId();
-  const [activeCategory, setActiveCategory] = useState<CategoryId>('mail-sync');
+  const [activeCategory, setActiveCategory] = useState<CategoryId>('profile');
   const [gmailEnabled, setGmailEnabled] = useState(true);
   const [outlookEnabled, setOutlookEnabled] = useState(false);
   const [sensitivity, setSensitivity] = useState(75);
