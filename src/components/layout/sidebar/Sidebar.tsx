@@ -5,6 +5,7 @@ import {
   Ellipsis,
   House,
   KanbanSquare,
+  Mail,
   NotebookPen,
 } from 'lucide-react';
 
@@ -23,6 +24,11 @@ const menuItems = [
     label: '칸반',
     href: '/kanban',
     icon: KanbanSquare,
+  },
+  {
+    label: '메일',
+    href: '/mail',
+    icon: Mail,
   },
   {
     label: '캘린더',

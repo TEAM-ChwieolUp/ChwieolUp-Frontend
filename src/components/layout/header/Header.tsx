@@ -31,6 +31,12 @@ const headerCopy: Record<
     helpDescription:
       '면접 일정, 마감일, 리마인더를 날짜 기준으로 확인하는 화면입니다.',
   },
+  '/mail': {
+    title: '메일',
+    helpTitle: '메일 안내',
+    helpDescription:
+      '채용 메일을 확인하고, AI가 감지한 다음 액션을 바로 처리하는 화면입니다.',
+  },
   '/retrospective': {
     title: '회고',
     helpTitle: '회고 안내',
