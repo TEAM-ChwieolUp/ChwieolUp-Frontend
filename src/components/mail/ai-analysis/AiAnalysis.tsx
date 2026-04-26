@@ -24,6 +24,8 @@ export default function AiAnalysis({ actions }: AiAnalysisProps) {
       <div className={styles.grid}>
         {actions.map((action) => {
           const Icon = action.icon === 'kanban' ? KanbanSquare : CalendarDays;
+          const toneLabel =
+            action.icon === 'kanban' ? '진행 단계 추천' : '일정 자동 감지';
 
           return (
             <article
@@ -33,30 +35,35 @@ export default function AiAnalysis({ actions }: AiAnalysisProps) {
               }`}
             >
               <div className={styles.cardContent}>
-                <span className={styles.iconWrap} aria-hidden='true'>
-                  <Icon />
-                </span>
+                <div className={styles.cardTop}>
+                  <span className={styles.iconWrap} aria-hidden='true'>
+                    <Icon />
+                  </span>
+                  <span className={styles.toneLabel}>{toneLabel}</span>
+                </div>
 
                 <div className={styles.copy}>
-                  <p className={styles.title}>
+                  <h3 className={styles.title}>
                     {action.title}{' '}
                     {action.accentText ? (
                       <span className={styles.accent}>{action.accentText}</span>
                     ) : null}
-                  </p>
+                  </h3>
 
-                  {action.description.map((line) => (
-                    <p
-                      key={line}
-                      className={`${styles.description} ${
-                        action.icon === 'calendar' && line.includes('2026')
-                          ? styles.emphasis
-                          : ''
-                      }`}
-                    >
-                      {line}
-                    </p>
-                  ))}
+                  <div className={styles.descriptionGroup}>
+                    {action.description.map((line) => (
+                      <p
+                        key={line}
+                        className={`${styles.description} ${
+                          action.icon === 'calendar' && line.includes('2026')
+                            ? styles.emphasis
+                            : ''
+                        }`}
+                      >
+                        {line}
+                      </p>
+                    ))}
+                  </div>
                 </div>
               </div>
 

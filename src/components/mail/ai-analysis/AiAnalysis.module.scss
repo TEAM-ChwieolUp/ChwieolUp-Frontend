@@ -60,33 +60,56 @@
   .grid {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 16px;
+    gap: 18px;
   }
 
   .card {
     display: flex;
-    min-height: 244px;
+    min-height: 252px;
     flex-direction: column;
     justify-content: space-between;
-    padding: 24px;
-    border-radius: 32px;
-    background: #ffffff;
-    box-shadow: 0 1px 1px rgba(0, 0, 0, 0.05);
+    padding: 22px;
+    border: 1px solid rgba(226, 232, 240, 0.88);
+    border-radius: 24px;
+    background:
+      linear-gradient(180deg, rgba(255, 255, 255, 0.96) 0%, rgba(248, 250, 252, 0.98) 100%);
+    box-shadow:
+      0 18px 40px rgba(15, 23, 42, 0.06),
+      inset 0 1px 0 rgba(255, 255, 255, 0.9);
+    transition:
+      transform 0.22s ease,
+      box-shadow 0.22s ease,
+      border-color 0.22s ease;
+
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow:
+        0 22px 44px rgba(15, 23, 42, 0.08),
+        inset 0 1px 0 rgba(255, 255, 255, 0.95);
+    }
   }
 
   .cardContent {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 20px;
+  }
+
+  .cardTop {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
   }
 
   .iconWrap {
     display: inline-flex;
     align-items: center;
     justify-content: center;
-    width: 40px;
-    height: 40px;
-    border-radius: 16px;
+    width: 44px;
+    height: 44px;
+    border-radius: 14px;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 
     svg {
       width: 18px;
@@ -94,28 +117,53 @@
     }
   }
 
+  .toneLabel {
+    display: inline-flex;
+    align-items: center;
+    min-height: 28px;
+    padding: 0 10px;
+    border-radius: 999px;
+    background: rgba(148, 163, 184, 0.12);
+    color: #475569;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.01em;
+    white-space: nowrap;
+  }
+
   .blue .iconWrap {
-    background: rgba(0, 88, 190, 0.1);
+    background: linear-gradient(180deg, rgba(0, 88, 190, 0.16) 0%, rgba(0, 88, 190, 0.08) 100%);
     color: #0058be;
   }
 
   .green .iconWrap {
-    background: rgba(0, 108, 73, 0.1);
+    background: linear-gradient(180deg, rgba(0, 108, 73, 0.16) 0%, rgba(0, 108, 73, 0.08) 100%);
     color: #006c49;
   }
 
   .copy {
     display: flex;
     flex-direction: column;
-    gap: 2px;
+    gap: 10px;
+  }
+
+  .descriptionGroup {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
   }
 
   .title,
   .description {
     margin: 0;
     color: #191c1e;
-    font-size: 16px;
-    line-height: 22px;
+    word-break: keep-all;
+  }
+
+  .title {
+    font-size: 20px;
+    font-weight: 700;
+    line-height: 1.35;
     word-break: keep-all;
   }
 
@@ -124,7 +172,9 @@
   }
 
   .description {
-    color: #191c1e;
+    color: #475569;
+    font-size: 14px;
+    line-height: 1.6;
   }
 
   .emphasis {
@@ -135,13 +185,15 @@
   .actions {
     display: flex;
     gap: 8px;
-    padding-top: 32px;
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
 
     button {
-      min-height: 44px;
+      min-height: 46px;
       flex: 1 1 0;
-      border: 0;
-      border-radius: 16px;
+      border: 1px solid transparent;
+      border-radius: 14px;
       font-size: 14px;
       font-weight: 600;
       line-height: 20px;
@@ -149,7 +201,9 @@
       transition:
         transform 0.2s ease,
         box-shadow 0.2s ease,
-        opacity 0.2s ease;
+        opacity 0.2s ease,
+        background-color 0.2s ease,
+        border-color 0.2s ease;
 
       &:hover {
         transform: translateY(-1px);
@@ -158,24 +212,25 @@
   }
 
   .blue .primaryButton {
-    background: linear-gradient(160deg, #0058be 0%, #2170e4 100%);
+    background: linear-gradient(160deg, #0b63ce 0%, #3b82f6 100%);
     box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      0 10px 20px rgba(37, 99, 235, 0.22),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
     color: #ffffff;
   }
 
   .green .primaryButton {
-    background: #006c49;
+    background: linear-gradient(160deg, #0b7a57 0%, #10906c 100%);
     box-shadow:
-      0 4px 6px -1px rgba(0, 0, 0, 0.1),
-      0 2px 4px -2px rgba(0, 0, 0, 0.1);
+      0 10px 20px rgba(16, 144, 108, 0.2),
+      inset 0 1px 0 rgba(255, 255, 255, 0.18);
     color: #ffffff;
   }
 
   .secondaryButton {
-    background: #e7e8ea;
-    color: #424754;
+    border-color: rgba(203, 213, 225, 0.9);
+    background: rgba(255, 255, 255, 0.9);
+    color: #475569;
   }
 }
 
@@ -187,6 +242,11 @@
 
     .card {
       min-height: auto;
+    }
+
+    .cardTop {
+      align-items: flex-start;
+      flex-direction: column;
     }
   }
 }
