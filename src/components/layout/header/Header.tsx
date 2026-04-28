@@ -5,6 +5,51 @@ import { useEffect, useRef, useState } from 'react';
 import { Manrope } from 'next/font/google';
 import styles from './Header.module.scss';
 
+const headerCopy: Record<
+  string,
+  {
+    title: string;
+    helpTitle: string;
+    helpDescription: string;
+  }
+> = {
+  '/': {
+    title: '홈',
+    helpTitle: '홈 안내',
+    helpDescription:
+      '오늘의 브리핑과 핵심 지표를 빠르게 확인하는 메인 화면입니다.',
+  },
+  '/kanban': {
+    title: '칸반',
+    helpTitle: '칸반 안내',
+    helpDescription:
+      '지원 단계를 이동시키면서 진행 상태와 우선순위를 관리하는 화면입니다.',
+  },
+  '/calendar': {
+    title: '캘린더',
+    helpTitle: '캘린더 안내',
+    helpDescription:
+      '면접 일정, 마감일, 리마인더를 날짜 기준으로 확인하는 화면입니다.',
+  },
+  '/mail': {
+    title: '메일',
+    helpTitle: '메일 안내',
+    helpDescription:
+      '채용 메일을 확인하고, AI가 감지한 다음 액션을 바로 처리하는 화면입니다.',
+  },
+  '/retrospective': {
+    title: '회고',
+    helpTitle: '회고 안내',
+    helpDescription:
+      '지원 기록을 돌아보고 다음 액션을 정리하는 회고 화면입니다.',
+  },
+  '/more': {
+    title: '더보기',
+    helpTitle: '더보기 안내',
+    helpDescription: '부가 기능과 설정 관련 메뉴를 모아둔 화면입니다.',
+  },
+};
+    
 const manrope = Manrope({
   subsets: ['latin'],
   weight: ['500', '600', '700', '800'],

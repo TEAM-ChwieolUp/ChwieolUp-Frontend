@@ -3,6 +3,8 @@
 import {
   CalendarDays,
   House,
+  KanbanSquare,
+  Mail,
   LayoutDashboard,
   NotebookPen,
   Settings,
@@ -27,6 +29,11 @@ const menuItems = [
     label: '칸반',
     href: '/kanban',
     icon: LayoutDashboard,
+  },
+  {
+    label: '메일',
+    href: '/mail',
+    icon: Mail,
   },
   {
     label: '캘린더',
