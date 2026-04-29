@@ -1,0 +1,381 @@
+.wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+  height: 100%;
+}
+
+// ── Header ──
+
+.header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 12px;
+}
+
+.headerLeft {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.pageTitle {
+  margin: 0;
+  font-size: 1.3rem;
+  font-weight: 800;
+  color: #0f172a;
+  letter-spacing: -0.03em;
+}
+
+.navGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.navBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  background: #ffffff;
+  cursor: pointer;
+  color: #64748b;
+  transition: background 0.15s, border-color 0.15s;
+
+  &:hover {
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+}
+
+.monthLabel {
+  font-size: 1rem;
+  font-weight: 700;
+  color: #1e293b;
+  min-width: 90px;
+  text-align: center;
+  letter-spacing: -0.02em;
+}
+
+.headerRight {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.viewToggle {
+  display: flex;
+  background: #f1f5f9;
+  border-radius: 10px;
+  padding: 3px;
+  gap: 2px;
+}
+
+.viewBtn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 7px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: #64748b;
+  background: transparent;
+  cursor: pointer;
+  transition: background 0.15s, color 0.15s;
+
+  &:hover {
+    background: #e2e8f0;
+    color: #1e293b;
+  }
+}
+
+.viewBtnActive {
+  background: #ffffff;
+  color: #1e293b;
+  font-weight: 600;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.filters {
+  display: flex;
+  gap: 6px;
+}
+
+.filterBtn {
+  padding: 6px 14px;
+  border: none;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+.filter_채용공고 {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.filter_내_프로세스 {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.filter_개인_일정 {
+  background: #ea580c;
+  color: #ffffff;
+}
+
+.filterInactive {
+  opacity: 0.35;
+}
+
+.filterActive {
+  opacity: 1;
+}
+
+.addBtn {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 18px;
+  border: none;
+  border-radius: 10px;
+  background: #4f46e5;
+  color: #ffffff;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s;
+
+  &:hover {
+    background: #4338ca;
+  }
+}
+
+// ── Calendar Card ──
+
+.calendarCard {
+  background: #ffffff;
+  border-radius: 20px;
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  box-shadow:
+    0 4px 24px rgba(15, 23, 42, 0.06),
+    0 1px 4px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+  flex: 1;
+}
+
+// ── Monthly Grid ──
+
+.monthGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 100%;
+}
+
+.dayHeader {
+  padding: 12px 0;
+  text-align: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: #64748b;
+  border-bottom: 1px solid #f1f5f9;
+  letter-spacing: 0.02em;
+}
+
+.sunday {
+  color: #ef4444;
+}
+
+.saturday {
+  color: #3b82f6;
+}
+
+.dayCell {
+  padding: 8px;
+  border-right: 1px solid #f1f5f9;
+  border-bottom: 1px solid #f1f5f9;
+  min-height: 100px;
+  cursor: pointer;
+  transition: background 0.1s;
+
+  &:nth-child(7n) {
+    border-right: none;
+  }
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.dayCellOther {
+  background: #fafafa;
+
+  .dateNum {
+    color: #cbd5e1;
+  }
+}
+
+.dateNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #374151;
+  margin-bottom: 4px;
+}
+
+.dateToday {
+  background: #4f46e5;
+  color: #ffffff !important;
+  font-weight: 700;
+}
+
+.sundayNum {
+  color: #ef4444;
+}
+
+.saturdayNum {
+  color: #3b82f6;
+}
+
+.eventList {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+// ── Event Pills ──
+
+.eventPill {
+  display: block;
+  width: 100%;
+  padding: 3px 7px;
+  border: none;
+  border-radius: 5px;
+  font-size: 0.72rem;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  transition: opacity 0.15s, transform 0.1s;
+
+  &:hover {
+    opacity: 0.85;
+    transform: scale(1.01);
+  }
+
+  &:active {
+    transform: scale(0.98);
+  }
+}
+
+.eventBlue {
+  background: #4f46e5;
+  color: #ffffff;
+}
+
+.eventGreen {
+  background: #16a34a;
+  color: #ffffff;
+}
+
+.eventOrange {
+  background: #ea580c;
+  color: #ffffff;
+}
+
+// ── Weekly View ──
+
+.weekGrid {
+  display: grid;
+  grid-template-columns: repeat(7, 1fr);
+  height: 100%;
+  min-height: 520px;
+}
+
+.weekCol {
+  border-right: 1px solid #f1f5f9;
+  display: flex;
+  flex-direction: column;
+
+  &:last-child {
+    border-right: none;
+  }
+}
+
+.weekColHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 12px 8px;
+  border-bottom: 1px solid #f1f5f9;
+}
+
+.weekDayName {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #64748b;
+  letter-spacing: 0.02em;
+}
+
+.weekDateNum {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.weekEventArea {
+  flex: 1;
+  padding: 8px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  cursor: pointer;
+
+  &:hover {
+    background: #f8fafc;
+  }
+}
+
+.eventPillFull {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+  padding: 5px 8px;
+  white-space: normal;
+  height: auto;
+}
+
+.eventTime {
+  font-size: 0.65rem;
+  opacity: 0.8;
+  display: block;
+}
+
+.weekColSun .weekDayName { color: #ef4444; }
+.weekColSat .weekDayName { color: #3b82f6; }
