@@ -1,3 +1,5 @@
+import KanbanBoard from '@/components/kanban/KanbanBoard';
+
 export default function KanbanPage() {
-  return <div>칸반 페이지</div>;
+  return <KanbanBoard />;
 }
