@@ -107,16 +107,6 @@ export default function LoginPage() {
             })}
           </div>
 
-          <div className={styles.statsRow}>
-            <div className={styles.statCard}>
-              <strong className={styles.statValue}>500+</strong>
-              <span className={styles.statLabel}>관리 가능한 공고</span>
-            </div>
-            <div className={styles.statCard}>
-              <strong className={styles.statValue}>15k</strong>
-              <span className={styles.statLabel}>누적 지원 기록</span>
-            </div>
-          </div>
         </div>
 
         <div className={styles.formPanel}>
