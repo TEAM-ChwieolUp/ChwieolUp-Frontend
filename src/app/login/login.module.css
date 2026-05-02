@@ -16,8 +16,8 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  gap: 32px;
-  padding: 56px 64px;
+  gap: 28px;
+  padding: 48px 56px;
   background-color: #020617;
   background-position: center;
   background-repeat: no-repeat;
@@ -36,37 +36,38 @@
 }
 
 .logoMark {
-  width: 22px;
-  height: 36px;
+  width: 28px;
+  height: 28px;
+  border-radius: 8px;
 }
 
 .badge {
   color: #c7d2fe;
-  font-size: 15px;
+  font-size: 13px;
   font-weight: 700;
   letter-spacing: 0.08em;
 }
 
 .introTitle {
-  margin: 28px 0 0;
-  font-size: clamp(2.6rem, 3vw, 4rem);
+  margin: 22px 0 0;
+  font-size: clamp(2.15rem, 2.7vw, 3.3rem);
   font-weight: 800;
-  line-height: 1.12;
+  line-height: 1.14;
   letter-spacing: -0.05em;
 }
 
 .introDescription {
   max-width: 470px;
-  margin: 20px 0 0;
+  margin: 16px 0 0;
   color: #cbd5e1;
-  font-size: 16px;
-  line-height: 1.75;
+  font-size: 14px;
+  line-height: 1.7;
 }
 
 .highlightList {
   display: flex;
   flex-direction: column;
-  gap: 18px;
+  gap: 14px;
   max-width: 520px;
 }
 
@@ -99,22 +100,22 @@
 }
 
 .highlightTitle {
-  font-size: 16px;
+  font-size: 14px;
   font-weight: 600;
 }
 
 .highlightDescription {
   margin: 0;
   color: #cbd5e1;
-  font-size: 14px;
+  font-size: 13px;
   line-height: 1.6;
 }
 
 .statsRow {
   display: flex;
-  gap: 28px;
+  gap: 24px;
   max-width: 520px;
-  padding-top: 26px;
+  padding-top: 22px;
   border-top: 1px solid rgba(255, 255, 255, 0.12);
 }
 
@@ -125,7 +126,7 @@
 }
 
 .statValue {
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 700;
   line-height: 1;
   letter-spacing: -0.05em;
@@ -133,9 +134,9 @@
 
 .statLabel {
   color: #94a3b8;
-  font-size: 12px;
+  font-size: 11px;
   font-weight: 700;
-  letter-spacing: 0.18em;
+  letter-spacing: 0.14em;
   text-transform: uppercase;
 }
 
@@ -143,14 +144,14 @@
   display: flex;
   flex-direction: column;
   justify-content: center;
-  padding: 32px 40px;
+  padding: 28px 36px;
   background-color: #f8f8f7;
 }
 
 .formHeader {
   max-width: 448px;
   margin: 0 auto;
-  padding-bottom: 32px;
+  padding-bottom: 24px;
   text-align: center;
 }
 
@@ -161,47 +162,40 @@
 }
 
 .brandMark {
-  width: 14px;
-  height: 24px;
+  width: 20px;
+  height: 20px;
+  border-radius: 6px;
 }
 
 .brandName {
   color: #191c1e;
-  font-size: 24px;
+  font-size: 20px;
   font-weight: 800;
   letter-spacing: -0.04em;
 }
 
 .formTitle {
-  margin: 28px 0 0;
+  margin: 22px 0 0;
   color: #191c1e;
-  font-size: 40px;
+  font-size: 32px;
   font-weight: 800;
-  line-height: 1.1;
+  line-height: 1.14;
   letter-spacing: -0.05em;
 }
 
 .formDescription {
-  margin: 12px 0 0;
+  margin: 10px 0 0;
   color: #434654;
-  font-size: 15px;
-  line-height: 1.55;
-}
-
-.formAccent {
-  margin: 8px 0 0;
-  color: #003d9b;
-  font-size: 16px;
-  font-weight: 700;
+  font-size: 14px;
   line-height: 1.5;
 }
 
 .socialList {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 12px;
   width: 100%;
-  max-width: 448px;
+  max-width: 400px;
   margin: 0 auto;
 }
 
@@ -209,14 +203,13 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 14px;
-  min-height: 56px;
+  gap: 12px;
   width: 100%;
-  padding: 0 20px;
+  min-height: 48px;
+  padding: 0 16px;
+  border: 1px solid transparent;
+  background: transparent;
   border-radius: 10px;
-  font-size: 14px;
-  font-weight: 800;
-  letter-spacing: 0.01em;
   cursor: pointer;
   transition:
     transform 0.2s ease,
@@ -227,45 +220,46 @@
 
 .socialButton:hover {
   transform: translateY(-1px);
-  box-shadow: 0 12px 24px rgba(15, 23, 42, 0.08);
+  box-shadow: 0 10px 20px rgba(15, 23, 42, 0.08);
 }
 
 .socialButton:focus-visible {
   outline: 3px solid rgba(37, 99, 235, 0.18);
   outline-offset: 2px;
+  border-radius: 10px;
 }
 
 .socialIcon {
   flex-shrink: 0;
-  width: 20px;
-  height: 20px;
-}
-
-.socialArrow {
-  width: 16px;
-  height: 16px;
-  margin-left: auto;
+  width: 32px;
+  height: 32px;
 }
 
 .kakaoButton {
-  border: 1px solid transparent;
+  max-width: 400px;
   background-color: #fee500;
   color: #111111;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.08);
 }
 
 .googleButton {
-  border: 1px solid #c3c6d6;
+  max-width: 400px;
+  border-color: transparent;
   background-color: #ffffff;
   color: #191c1e;
+  box-shadow: 0 8px 20px rgba(17, 17, 17, 0.05);
 }
 
-.helperCopy {
-  max-width: 448px;
-  margin: 28px auto 0;
-  color: #434654;
-  font-size: 14px;
-  line-height: 1.6;
-  text-align: center;
+.socialLabel {
+  font-size: 13px;
+  font-weight: 800;
+  letter-spacing: 0.01em;
+}
+
+.socialArrow {
+  width: 15px;
+  height: 15px;
+  margin-left: auto;
 }
 
 .formFooter {
@@ -274,9 +268,9 @@
   justify-content: space-between;
   gap: 24px;
   width: 100%;
-  max-width: 448px;
-  margin: 180px auto 0;
-  padding-top: 24px;
+  max-width: 400px;
+  margin: 128px auto 0;
+  padding-top: 20px;
   border-top: 1px solid #e1e2e4;
 }
 
@@ -330,11 +324,11 @@
 
   .introPanel,
   .formPanel {
-    padding: 40px 28px;
+    padding: 36px 28px;
   }
 
   .formFooter {
-    margin-top: 64px;
+    margin-top: 56px;
   }
 }
 
@@ -342,6 +336,14 @@
   .introPanel,
   .formPanel {
     padding: 28px 20px;
+  }
+
+  .brandName {
+    font-size: 18px;
+  }
+
+  .formTitle {
+    font-size: 28px;
   }
 
   .introTitle {
