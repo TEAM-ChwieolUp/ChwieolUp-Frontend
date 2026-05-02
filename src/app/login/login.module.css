@@ -122,19 +122,19 @@
 .formHeader {
   max-width: 448px;
   margin: 0 auto;
-  padding-bottom: 24px;
+  padding-bottom: 40px;
   text-align: center;
 }
 
 .brandLockup {
   display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 10px;
 }
 
 .brandMark {
-  width: 20px;
-  height: 20px;
+  width: 32px;
+  height: 32px;
   border-radius: 6px;
 }
 

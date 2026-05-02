@@ -117,8 +117,8 @@ export default function LoginPage() {
                 src={logoImageUrl}
                 alt=''
                 aria-hidden='true'
-                width={20}
-                height={20}
+                width={32}
+                height={32}
               />
               <span className={styles.brandName}>ChwieolUp</span>
             </div>
