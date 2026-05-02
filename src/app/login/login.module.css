@@ -111,35 +111,6 @@
   line-height: 1.6;
 }
 
-.statsRow {
-  display: flex;
-  gap: 24px;
-  max-width: 520px;
-  padding-top: 22px;
-  border-top: 1px solid rgba(255, 255, 255, 0.12);
-}
-
-.statCard {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-}
-
-.statValue {
-  font-size: 32px;
-  font-weight: 700;
-  line-height: 1;
-  letter-spacing: -0.05em;
-}
-
-.statLabel {
-  color: #94a3b8;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-}
-
 .formPanel {
   display: flex;
   flex-direction: column;
