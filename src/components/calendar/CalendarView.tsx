@@ -68,6 +68,7 @@ export default function CalendarView() {
   const [activeFilters, setActiveFilters] = useState<EventCategory[]>([...ALL_CATEGORIES]);
   const [events, setEvents] = useState<CalendarEvent[]>(dummyEvents);
   const [selectedEvent, setSelectedEvent] = useState<CalendarEvent | null>(null);
+  const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [showAddModal, setShowAddModal] = useState(false);
   const [addDefaultDate, setAddDefaultDate] = useState<string | undefined>(undefined);
 
@@ -93,13 +94,60 @@ export default function CalendarView() {
     return events.filter(e => e.date === str && activeFilters.includes(e.category));
   }
 
-  function handleAddEvent(event: Omit<CalendarEvent, 'id'>) {
-    setEvents(prev => [...prev, { ...event, id: String(Date.now()) }]);
+  function openCreateModal(defaultDate?: string) {
+    setSelectedEvent(null);
+    setEditingEvent(null);
+    setAddDefaultDate(defaultDate);
+    setShowAddModal(true);
+  }
+
+  function closeModal() {
+    setShowAddModal(false);
+    setEditingEvent(null);
+    setAddDefaultDate(undefined);
+  }
+
+  function handleSaveEvent(event: Omit<CalendarEvent, 'id'>) {
+    if (editingEvent) {
+      const updatedEvent = { ...editingEvent, ...event };
+      setEvents(prev => prev.map(item => (item.id === editingEvent.id ? updatedEvent : item)));
+      setSelectedEvent(updatedEvent);
+      closeModal();
+      return;
+    }
+
+    const newEvent = { ...event, id: String(Date.now()) };
+    setEvents(prev => [...prev, newEvent]);
+    setSelectedEvent(newEvent);
+    closeModal();
+  }
+
+  function handleDeleteEvent(eventId: string) {
+    const targetEvent = events.find(event => event.id === eventId);
+    if (!targetEvent) return;
+
+    const shouldDelete = window.confirm(`"${targetEvent.title}" 일정을 삭제할까요?`);
+    if (!shouldDelete) return;
+
+    setEvents(prev => prev.filter(event => event.id !== eventId));
+    setSelectedEvent(prev => (prev?.id === eventId ? null : prev));
+
+    if (editingEvent?.id === eventId) {
+      closeModal();
+    }
+  }
+
+  function handleEditEvent() {
+    if (!selectedEvent) return;
+
+    setEditingEvent(selectedEvent);
+    setAddDefaultDate(undefined);
+    setSelectedEvent(null);
+    setShowAddModal(true);
   }
 
   function handleCellClick(date: Date) {
-    setAddDefaultDate(toDateStr(date));
-    setShowAddModal(true);
+    openCreateModal(toDateStr(date));
   }
 
   const monthDays = getMonthDays(year, month);
@@ -150,7 +198,7 @@ export default function CalendarView() {
             ))}
           </div>
 
-          <button className={styles.addBtn} onClick={() => { setAddDefaultDate(undefined); setShowAddModal(true); }}>
+          <button className={styles.addBtn} onClick={() => openCreateModal()}>
             <Plus size={16} />
             일정 추가
           </button>
@@ -183,6 +231,8 @@ export default function CalendarView() {
         <EventDetailPopover
           event={selectedEvent}
           onClose={() => setSelectedEvent(null)}
+          onEdit={handleEditEvent}
+          onDelete={() => handleDeleteEvent(selectedEvent.id)}
         />
       )}
 
@@ -190,8 +240,11 @@ export default function CalendarView() {
       {showAddModal && (
         <AddEventModal
           defaultDate={addDefaultDate}
-          onClose={() => setShowAddModal(false)}
-          onSave={handleAddEvent}
+          initialEvent={editingEvent}
+          mode={editingEvent ? 'edit' : 'create'}
+          onClose={closeModal}
+          onSave={handleSaveEvent}
+          onDelete={editingEvent ? () => handleDeleteEvent(editingEvent.id) : undefined}
         />
       )}
     </div>

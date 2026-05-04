@@ -1,12 +1,14 @@
 'use client';
 
-import { Building2, Calendar, MapPin, X, ExternalLink } from 'lucide-react';
+import { Building2, Calendar, MapPin, X, ExternalLink, Pencil, Trash2 } from 'lucide-react';
 import { CalendarEvent } from './types';
 import styles from './EventDetailPopover.module.scss';
 
 interface EventDetailPopoverProps {
   event: CalendarEvent;
   onClose: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
 }
 
 const CATEGORY_LABEL: Record<string, string> = {
@@ -20,7 +22,7 @@ function formatDate(dateStr: string) {
   return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
 }
 
-export default function EventDetailPopover({ event, onClose }: EventDetailPopoverProps) {
+export default function EventDetailPopover({ event, onClose, onEdit, onDelete }: EventDetailPopoverProps) {
   return (
     <>
       <div className={styles.backdrop} onClick={onClose} />
@@ -69,7 +71,18 @@ export default function EventDetailPopover({ event, onClose }: EventDetailPopove
           <p className={styles.description}>{event.description}</p>
         )}
 
-        <button className={styles.gcalBtn}>
+        <div className={styles.actionRow}>
+          <button type="button" className={styles.secondaryBtn} onClick={onEdit}>
+            <Pencil size={14} />
+            수정
+          </button>
+          <button type="button" className={styles.dangerBtn} onClick={onDelete}>
+            <Trash2 size={14} />
+            삭제
+          </button>
+        </div>
+
+        <button type="button" className={styles.gcalBtn}>
           <ExternalLink size={14} />
           Google Calendar에 추가
         </button>

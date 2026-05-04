@@ -2,6 +2,7 @@
   position: fixed;
   inset: 0;
   z-index: 100;
+  background: rgba(15, 23, 42, 0.18);
 }
 
 .popover {
@@ -16,7 +17,7 @@
     0 20px 60px rgba(15, 23, 42, 0.16),
     0 4px 16px rgba(15, 23, 42, 0.08);
   padding: 20px;
-  width: 320px;
+  width: min(360px, calc(100vw - 32px));
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -127,6 +128,48 @@
   font-size: 0.85rem;
   color: #64748b;
   line-height: 1.5;
+}
+
+.actionRow {
+  display: flex;
+  gap: 8px;
+}
+
+.secondaryBtn,
+.dangerBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex: 1;
+  padding: 9px 12px;
+  border-radius: 10px;
+  font-size: 0.84rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.secondaryBtn {
+  border: 1px solid #e2e8f0;
+  background: #ffffff;
+  color: #334155;
+
+  &:hover {
+    background: #f8fafc;
+    border-color: #cbd5e1;
+  }
+}
+
+.dangerBtn {
+  border: 1px solid rgba(220, 38, 38, 0.16);
+  background: #fff5f5;
+  color: #dc2626;
+
+  &:hover {
+    background: #fee2e2;
+    border-color: rgba(220, 38, 38, 0.24);
+  }
 }
 
 .gcalBtn {
