@@ -1,3 +1,5 @@
+import RetroView from '@/components/retrospective/RetroView';
+
 export default function RetrospectivePage() {
-  return <div>회고 페이지</div>;
+  return <RetroView />;
 }
