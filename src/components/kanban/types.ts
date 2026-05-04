@@ -1,59 +1,99 @@
-export type KanbanStage = '지원완료' | '서류통과' | '코테/과제' | '면접' | '최종결과';
 export type FinalResult = '합격' | '불합격' | null;
-export type Tag =
-  | '관심기업'
-  | '핀테크'
-  | '스타트업'
-  | '대기업'
-  | '외국계'
-  | 'AI'
-  | '백엔드'
-  | '프론트엔드';
+export type Tag = string;
+
+export interface KanbanStage {
+  id: string;
+  name: string;
+  color: string;
+  kind: 'custom' | 'final';
+  locked?: boolean;
+}
 
 export interface KanbanCard {
   id: string;
   company: string;
   position: string;
   appliedDate: string; // 'M/D' 형식
-  stage: KanbanStage;
+  stageId: string;
   tags: Tag[];
   nextAction?: string;
   noResponseDays?: number; // 무응답 N일째
   finalResult?: FinalResult;
+  memo?: string;
 }
 
-export interface NewCardForm {
+export interface KanbanFormValues {
   company: string;
   position: string;
   appliedDate: string;
-  stage: KanbanStage;
+  stageId: string;
   tags: Tag[];
   nextAction: string;
+  noResponseDays: string;
+  finalResult: FinalResult;
+  memo: string;
 }
 
-export const ALL_STAGES: KanbanStage[] = [
-  '지원완료',
-  '서류통과',
-  '코테/과제',
-  '면접',
-  '최종결과',
-];
+export const FINAL_STAGE_ID = 'final-result';
 
-export const ALL_TAGS: Tag[] = [
-  '관심기업',
-  '핀테크',
-  '스타트업',
-  '대기업',
-  '외국계',
-  'AI',
-  '백엔드',
-  '프론트엔드',
-];
-
-export const STAGE_COLORS: Record<KanbanStage, string> = {
-  '지원완료': '#6b7280',
-  '서류통과': '#3b82f6',
-  '코테/과제': '#f59e0b',
-  '면접': '#f97316',
-  '최종결과': '#22c55e',
+export const FINAL_STAGE: KanbanStage = {
+  id: FINAL_STAGE_ID,
+  name: '최종 결과',
+  color: '#22c55e',
+  kind: 'final',
+  locked: true,
 };
+
+export const DEFAULT_CUSTOM_STAGES: KanbanStage[] = [
+  {
+    id: 'applied',
+    name: '지원 완료',
+    color: '#64748b',
+    kind: 'custom',
+  },
+  {
+    id: 'screening',
+    name: '서류 검토',
+    color: '#3b82f6',
+    kind: 'custom',
+  },
+  {
+    id: 'process',
+    name: '전형 진행',
+    color: '#f59e0b',
+    kind: 'custom',
+  },
+  {
+    id: 'interview',
+    name: '면접',
+    color: '#f97316',
+    kind: 'custom',
+  },
+];
+
+export const INITIAL_STAGES: KanbanStage[] = [
+  ...DEFAULT_CUSTOM_STAGES,
+  FINAL_STAGE,
+];
+
+export const TAG_SUGGESTIONS: Tag[] = [
+  '관심기업',
+  '대기업',
+  '스타트업',
+  '인턴',
+  '정규직',
+  '리모트',
+  '포트폴리오 제출',
+  '추천 채용',
+];
+
+export const STAGE_COLOR_PRESETS = [
+  '#64748b',
+  '#3b82f6',
+  '#8b5cf6',
+  '#f59e0b',
+  '#f97316',
+  '#14b8a6',
+  '#ef4444',
+  '#22c55e',
+];
