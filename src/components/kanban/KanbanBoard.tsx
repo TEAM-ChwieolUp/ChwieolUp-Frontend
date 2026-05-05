@@ -1,9 +1,9 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { startTransition, useEffect, useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { ChevronDown, LayoutPanelLeft, Plus, Settings2 } from 'lucide-react';
 import {
-  FINAL_STAGE_ID,
   INITIAL_STAGES,
   KanbanStage,
   KanbanCard as KanbanCardType,
@@ -11,12 +11,39 @@ import {
   Tag,
 } from './types';
 import { dummyCards } from './dummyData';
+import { ApiError } from '@/lib/api';
+import {
+  createStage,
+  deleteStage,
+  listStages,
+  stageKeys,
+  updateStage,
+} from '@/features/kanban/api/stages';
 import KanbanCard from './KanbanCard';
 import AddApplicationModal from './AddApplicationModal';
 import StageSettingsModal from './StageSettingsModal';
 import styles from './KanbanBoard.module.scss';
 
+const LEGACY_STAGE_ORDER = ['applied', 'screening', 'process', 'interview'] as const;
+
+function mapCardToStageResult(stage: KanbanStage | undefined) {
+  if (!stage) {
+    return null;
+  }
+
+  if (stage.kind === 'passed') {
+    return '합격';
+  }
+
+  if (stage.kind === 'rejected') {
+    return '불합격';
+  }
+
+  return null;
+}
+
 export default function KanbanBoard() {
+  const queryClient = useQueryClient();
   const [cards, setCards] = useState<KanbanCardType[]>(dummyCards);
   const [stages, setStages] = useState<KanbanStage[]>(INITIAL_STAGES);
   const [activeTagFilters, setActiveTagFilters] = useState<Tag[]>([]);
@@ -24,13 +51,162 @@ export default function KanbanBoard() {
   const [showAddModal, setShowAddModal] = useState(false);
   const [showStageSettings, setShowStageSettings] = useState(false);
   const [defaultStageId, setDefaultStageId] = useState(
-    INITIAL_STAGES[0]?.id ?? FINAL_STAGE_ID
+    INITIAL_STAGES.find((stage) => stage.kind === 'custom')?.id ?? INITIAL_STAGES[0]?.id ?? ''
   );
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null);
 
-  // ── Drag state ──
   const [dragCardId, setDragCardId] = useState<string | null>(null);
   const [dragOverStageId, setDragOverStageId] = useState<string | null>(null);
+
+  const { data: stageData, isLoading: isStagesLoading } = useQuery({
+    queryKey: stageKeys.all,
+    queryFn: listStages,
+  });
+
+  useEffect(() => {
+    if (!stageData || stageData.length === 0) {
+      return;
+    }
+
+    startTransition(() => {
+      setStages(stageData);
+      setDefaultStageId(
+        stageData.find((stage) => stage.kind === 'custom')?.id ?? stageData[0]?.id ?? ''
+      );
+
+      setCards((prev) => {
+        const customStages = stageData.filter((stage) => stage.kind === 'custom');
+        const passedStageId = stageData.find((stage) => stage.kind === 'passed')?.id;
+        const rejectedStageId = stageData.find((stage) => stage.kind === 'rejected')?.id;
+
+        return prev.map((card) => {
+          if (card.finalResult === '합격' && passedStageId) {
+            return { ...card, stageId: passedStageId };
+          }
+
+          if (card.finalResult === '불합격' && rejectedStageId) {
+            return { ...card, stageId: rejectedStageId };
+          }
+
+          const legacyIndex = LEGACY_STAGE_ORDER.findIndex((stageId) => stageId === card.stageId);
+
+          if (legacyIndex >= 0) {
+            const mappedStage = customStages[legacyIndex] ?? customStages[0];
+
+            if (mappedStage) {
+              return { ...card, stageId: mappedStage.id };
+            }
+          }
+
+          return card;
+        });
+      });
+    });
+  }, [stageData]);
+
+  const saveStagesMutation = useMutation({
+    mutationFn: async (nextStages: KanbanStage[]) => {
+      const currentStages = stages;
+      const currentStageMap = new Map(currentStages.map((stage) => [stage.id, stage]));
+      const nextStageMap = new Map(nextStages.map((stage) => [stage.id, stage]));
+
+      const removedStages = currentStages.filter((stage) => !nextStageMap.has(stage.id));
+
+      removedStages.forEach((stage) => {
+        if (stage.kind !== 'custom') {
+          throw new Error('고정 단계는 삭제할 수 없습니다.');
+        }
+
+        if (cards.some((card) => card.stageId === stage.id)) {
+          throw new Error(`"${stage.name}" 단계에 카드가 남아 있어 삭제할 수 없습니다.`);
+        }
+      });
+
+      for (const stage of removedStages) {
+        await deleteStage(stage.id);
+      }
+
+      const createdStageIdMap = new Map<string, string>();
+
+      for (const [index, stage] of nextStages.entries()) {
+        if (currentStageMap.has(stage.id)) {
+          continue;
+        }
+
+        const createdStage = await createStage({
+          name: stage.name.trim(),
+          color: stage.color,
+          displayOrder: index,
+        });
+
+        createdStageIdMap.set(stage.id, createdStage.id);
+      }
+
+      for (const [index, stage] of nextStages.entries()) {
+        const currentStage = currentStageMap.get(stage.id);
+
+        if (!currentStage) {
+          continue;
+        }
+
+        const patch: {
+          name?: string;
+          color?: string;
+          displayOrder?: number;
+        } = {};
+
+        if (currentStage.name !== stage.name.trim()) {
+          patch.name = stage.name.trim();
+        }
+
+        if (currentStage.color !== stage.color) {
+          patch.color = stage.color;
+        }
+
+        if (currentStage.displayOrder !== index) {
+          patch.displayOrder = index;
+        }
+
+        if (Object.keys(patch).length > 0) {
+          await updateStage(stage.id, patch);
+        }
+      }
+
+      await queryClient.invalidateQueries({ queryKey: stageKeys.all });
+
+      const refreshedStages = await queryClient.fetchQuery({
+        queryKey: stageKeys.all,
+        queryFn: listStages,
+      });
+
+      return {
+        stages: refreshedStages,
+        createdStageIdMap,
+      };
+    },
+    onSuccess: ({ stages: nextStages, createdStageIdMap }) => {
+      setCards((prev) =>
+        prev.map((card) => ({
+          ...card,
+          stageId: createdStageIdMap.get(card.stageId) ?? card.stageId,
+        }))
+      );
+      setStages(nextStages);
+      setDefaultStageId(
+        nextStages.find((stage) => stage.kind === 'custom')?.id ?? nextStages[0]?.id ?? ''
+      );
+      setShowStageSettings(false);
+    },
+    onError: (error) => {
+      const message =
+        error instanceof ApiError
+          ? error.message
+          : error instanceof Error
+            ? error.message
+            : '단계 저장 중 오류가 발생했습니다.';
+      window.alert(message);
+    },
+  });
 
   const selectedCard = cards.find((card) => card.id === selectedCardId) ?? null;
 
@@ -41,7 +217,15 @@ export default function KanbanBoard() {
     return Array.from(ordered.values());
   }, [cards]);
 
-  // ── Card handlers ──
+  const stageCardCounts = useMemo(
+    () =>
+      stages.reduce<Record<string, number>>((acc, stage) => {
+        acc[stage.id] = cards.filter((card) => card.stageId === stage.id).length;
+        return acc;
+      }, {}),
+    [cards, stages]
+  );
+
   function toggleTagFilter(tag: Tag) {
     setActiveTagFilters((prev) =>
       prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]
@@ -51,11 +235,14 @@ export default function KanbanBoard() {
   function handleUpsertCard(card: Omit<KanbanCardType, 'id'>, existingId?: string) {
     if (existingId) {
       setCards((prev) =>
-        prev.map((c) => (c.id === existingId ? { ...card, id: existingId } : c))
+        prev.map((currentCard) =>
+          currentCard.id === existingId ? { ...card, id: existingId } : currentCard
+        )
       );
       setSelectedCardId(existingId);
       return;
     }
+
     const nextId = String(Date.now());
     setCards((prev) => [...prev, { ...card, id: nextId }]);
     setSelectedCardId(nextId);
@@ -77,10 +264,10 @@ export default function KanbanBoard() {
     setShowAddModal(true);
   }
 
-  function handleSaveStages(nextStages: KanbanStage[]) {
-    const nextStageIds = new Set(nextStages.map((s) => s.id));
+  async function handleSaveStages(nextStages: KanbanStage[]) {
+    const nextStageIds = new Set(nextStages.map((stage) => stage.id));
     const fallbackId =
-      nextStages.find((s) => s.kind === 'custom')?.id ?? FINAL_STAGE_ID;
+      nextStages.find((stage) => stage.kind === 'custom')?.id ?? nextStages[0]?.id ?? '';
 
     setCards((prev) =>
       prev.map((card) =>
@@ -89,24 +276,23 @@ export default function KanbanBoard() {
           : {
               ...card,
               stageId: fallbackId,
-              finalResult: fallbackId === FINAL_STAGE_ID ? card.finalResult : null,
+              finalResult: null,
             }
       )
     );
-    setStages(nextStages);
-    setShowStageSettings(false);
+
+    await saveStagesMutation.mutateAsync(nextStages);
   }
 
   function getFilteredCards(stageId: string) {
     return cards.filter(
-      (c) =>
-        c.stageId === stageId &&
+      (card) =>
+        card.stageId === stageId &&
         (activeTagFilters.length === 0 ||
-          activeTagFilters.some((t) => c.tags.includes(t)))
+          activeTagFilters.some((tag) => card.tags.includes(tag)))
     );
   }
 
-  // ── Drag & drop ──
   function handleDragStart(cardId: string) {
     setDragCardId(cardId);
   }
@@ -116,27 +302,30 @@ export default function KanbanBoard() {
     setDragOverStageId(null);
   }
 
-  function handleColumnDragOver(e: React.DragEvent, stageId: string) {
-    e.preventDefault();
-    e.dataTransfer.dropEffect = 'move';
+  function handleColumnDragOver(event: React.DragEvent, stageId: string) {
+    event.preventDefault();
+    event.dataTransfer.dropEffect = 'move';
     if (dragOverStageId !== stageId) setDragOverStageId(stageId);
   }
 
-  function handleColumnDragLeave(e: React.DragEvent) {
-    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+  function handleColumnDragLeave(event: React.DragEvent) {
+    if (!event.currentTarget.contains(event.relatedTarget as Node)) {
       setDragOverStageId(null);
     }
   }
 
   function handleColumnDrop(stageId: string) {
     if (!dragCardId) return;
+
+    const targetStage = stages.find((stage) => stage.id === stageId);
+
     setCards((prev) =>
       prev.map((card) =>
         card.id === dragCardId
           ? {
               ...card,
               stageId,
-              finalResult: stageId !== FINAL_STAGE_ID ? null : card.finalResult,
+              finalResult: mapCardToStageResult(targetStage),
             }
           : card
       )
@@ -145,9 +334,12 @@ export default function KanbanBoard() {
     setDragOverStageId(null);
   }
 
+  if (isStagesLoading && stages.length === 0) {
+    return <div className={styles.wrapper}>단계를 불러오는 중입니다...</div>;
+  }
+
   return (
     <div className={styles.wrapper}>
-      {/* ── Toolbar ── */}
       <div className={styles.toolbar}>
         <h1 className={styles.pageTitle}>지원 현황</h1>
 
@@ -157,7 +349,7 @@ export default function KanbanBoard() {
               className={`${styles.filterBtn} ${
                 activeTagFilters.length > 0 ? styles.filterBtnActive : ''
               }`}
-              onClick={() => setShowFilterDropdown((v) => !v)}
+              onClick={() => setShowFilterDropdown((value) => !value)}
             >
               태그 필터
               {activeTagFilters.length > 0 && (
@@ -209,7 +401,9 @@ export default function KanbanBoard() {
             className={styles.addBtn}
             onClick={() =>
               openAddModal(
-                stages.find((s) => s.kind === 'custom')?.id ?? FINAL_STAGE_ID
+                stages.find((stage) => stage.kind === 'custom')?.id ??
+                  stages[0]?.id ??
+                  ''
               )
             }
           >
@@ -219,7 +413,6 @@ export default function KanbanBoard() {
         </div>
       </div>
 
-      {/* ── Active filter chips ── */}
       {activeTagFilters.length > 0 && (
         <div className={styles.activeFiltersBar}>
           <LayoutPanelLeft size={14} />
@@ -241,7 +434,6 @@ export default function KanbanBoard() {
         </div>
       )}
 
-      {/* ── Board ── */}
       <div className={`${styles.board} ${dragCardId ? styles.boardDragging : ''}`}>
         {stages.map((stage) => {
           const stageCards = getFilteredCards(stage.id);
@@ -251,7 +443,7 @@ export default function KanbanBoard() {
             <section
               key={stage.id}
               className={`${styles.column} ${isOver ? styles.columnDragOver : ''}`}
-              onDragOver={(e) => handleColumnDragOver(e, stage.id)}
+              onDragOver={(event) => handleColumnDragOver(event, stage.id)}
               onDragLeave={handleColumnDragLeave}
               onDrop={() => handleColumnDrop(stage.id)}
             >
@@ -261,9 +453,7 @@ export default function KanbanBoard() {
                   style={{ background: stage.color }}
                 />
                 <span className={styles.stageName}>{stage.name}</span>
-                {stage.kind === 'final' && (
-                  <span className={styles.lockedTag}>고정</span>
-                )}
+                {stage.locked && <span className={styles.lockedTag}>고정</span>}
                 <span className={styles.stageCount}>{stageCards.length}</span>
               </div>
 
@@ -314,8 +504,10 @@ export default function KanbanBoard() {
       {showStageSettings && (
         <StageSettingsModal
           stages={stages}
+          stageCardCounts={stageCardCounts}
           onClose={() => setShowStageSettings(false)}
           onSave={handleSaveStages}
+          isSaving={saveStagesMutation.isPending}
         />
       )}
     </div>

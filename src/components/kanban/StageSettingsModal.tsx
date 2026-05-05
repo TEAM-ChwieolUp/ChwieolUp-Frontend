@@ -2,17 +2,15 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { ArrowDown, ArrowUp, Lock, Plus, Trash2, X } from 'lucide-react';
-import {
-  FINAL_STAGE,
-  KanbanStage,
-  STAGE_COLOR_PRESETS,
-} from './types';
+import { KanbanStage, STAGE_COLOR_PRESETS } from './types';
 import styles from './StageSettingsModal.module.scss';
 
 interface StageSettingsModalProps {
   stages: KanbanStage[];
+  stageCardCounts: Record<string, number>;
   onClose: () => void;
-  onSave: (stages: KanbanStage[]) => void;
+  onSave: (stages: KanbanStage[]) => Promise<void>;
+  isSaving: boolean;
 }
 
 function createStageId(name: string) {
@@ -25,8 +23,10 @@ function createStageId(name: string) {
 
 export default function StageSettingsModal({
   stages,
+  stageCardCounts,
   onClose,
   onSave,
+  isSaving,
 }: StageSettingsModalProps) {
   const [draftStages, setDraftStages] = useState<KanbanStage[]>(stages);
 
@@ -57,19 +57,22 @@ export default function StageSettingsModal({
       id: createStageId('새 단계'),
       name: `새 단계 ${customStageCount + 1}`,
       color: STAGE_COLOR_PRESETS[customStageCount % STAGE_COLOR_PRESETS.length],
+      displayOrder: draftStages.length - 2,
+      category: 'IN_PROGRESS',
       kind: 'custom',
+      locked: false,
     };
 
     setDraftStages((prev) => {
-      const finalIndex = prev.findIndex((stage) => stage.kind === 'final');
-      if (finalIndex === -1) {
-        return [...prev, nextStage, FINAL_STAGE];
+      const fixedStageIndex = prev.findIndex((stage) => stage.kind !== 'custom');
+      if (fixedStageIndex === -1) {
+        return [...prev, nextStage];
       }
 
       return [
-        ...prev.slice(0, finalIndex),
+        ...prev.slice(0, fixedStageIndex),
         nextStage,
-        ...prev.slice(finalIndex),
+        ...prev.slice(fixedStageIndex),
       ];
     });
   }
@@ -100,6 +103,15 @@ export default function StageSettingsModal({
     setDraftStages((prev) => prev.filter((stage) => stage.id !== stageId));
   }
 
+  async function handleApply() {
+    await onSave(
+      draftStages.map((stage, index) => ({
+        ...stage,
+        displayOrder: index,
+      }))
+    );
+  }
+
   return (
     <div
       className={styles.overlay}
@@ -115,10 +127,10 @@ export default function StageSettingsModal({
               칸반 카테고리 구성
             </h2>
             <p className={styles.description}>
-              사용자 정의 단계는 자유롭게 수정할 수 있고, `최종 결과` 단계는 고정됩니다.
+              사용자 정의 단계는 자유롭게 수정할 수 있고, 고정 단계는 항상 오른쪽에 유지됩니다.
             </p>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="닫기">
+          <button className={styles.closeBtn} onClick={onClose} aria-label="닫기" disabled={isSaving}>
             <X size={18} />
           </button>
         </div>
@@ -126,6 +138,7 @@ export default function StageSettingsModal({
         <div className={styles.body}>
           {draftStages.map((stage, index) => {
             const isCustom = stage.kind === 'custom';
+            const stageCardCount = stageCardCounts[stage.id] ?? 0;
 
             return (
               <div key={stage.id} className={styles.stageCard}>
@@ -150,7 +163,7 @@ export default function StageSettingsModal({
                           type="button"
                           className={styles.iconBtn}
                           onClick={() => moveStage(stage.id, -1)}
-                          disabled={index === 0}
+                          disabled={index === 0 || isSaving}
                           aria-label="위로 이동"
                         >
                           <ArrowUp size={16} />
@@ -159,7 +172,7 @@ export default function StageSettingsModal({
                           type="button"
                           className={styles.iconBtn}
                           onClick={() => moveStage(stage.id, 1)}
-                          disabled={draftStages[index + 1]?.kind !== 'custom'}
+                          disabled={draftStages[index + 1]?.kind !== 'custom' || isSaving}
                           aria-label="아래로 이동"
                         >
                           <ArrowDown size={16} />
@@ -168,7 +181,7 @@ export default function StageSettingsModal({
                           type="button"
                           className={styles.iconBtn}
                           onClick={() => removeStage(stage.id)}
-                          disabled={customStageCount <= 1}
+                          disabled={customStageCount <= 1 || stageCardCount > 0 || isSaving}
                           aria-label="단계 삭제"
                         >
                           <Trash2 size={16} />
@@ -183,6 +196,12 @@ export default function StageSettingsModal({
                   </div>
                 </div>
 
+                {isCustom && stageCardCount > 0 ? (
+                  <p className={styles.stageId}>
+                    카드 {stageCardCount}개가 있어 삭제할 수 없습니다.
+                  </p>
+                ) : null}
+
                 <div className={styles.grid}>
                   <label className={styles.field}>
                     <span className={styles.label}>단계명</span>
@@ -192,7 +211,7 @@ export default function StageSettingsModal({
                       onChange={(event) =>
                         updateStage(stage.id, { name: event.target.value })
                       }
-                      disabled={!isCustom}
+                      disabled={!isCustom || isSaving}
                     />
                   </label>
 
@@ -208,7 +227,7 @@ export default function StageSettingsModal({
                           }`}
                           style={{ backgroundColor: color }}
                           onClick={() => updateStage(stage.id, { color })}
-                          disabled={!isCustom}
+                          disabled={!isCustom || isSaving}
                           aria-label={`${stage.name} 컬러 선택`}
                         />
                       ))}
@@ -221,21 +240,22 @@ export default function StageSettingsModal({
         </div>
 
         <div className={styles.footer}>
-          <button type="button" className={styles.addBtn} onClick={addStage}>
+          <button type="button" className={styles.addBtn} onClick={addStage} disabled={isSaving}>
             <Plus size={16} />
             단계 추가
           </button>
 
           <div className={styles.actionGroup}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose}>
+            <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={isSaving}>
               취소
             </button>
             <button
               type="button"
               className={styles.saveBtn}
-              onClick={() => onSave(draftStages)}
+              onClick={() => void handleApply()}
+              disabled={isSaving}
             >
-              적용하기
+              {isSaving ? '저장 중...' : '적용하기'}
             </button>
           </div>
         </div>

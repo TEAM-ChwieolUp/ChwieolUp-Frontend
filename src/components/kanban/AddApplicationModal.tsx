@@ -3,7 +3,6 @@
 import { useMemo, useState } from 'react';
 import { CalendarDays, Tag as TagIcon, Trash2, X } from 'lucide-react';
 import {
-  FINAL_STAGE_ID,
   KanbanCard,
   KanbanFormValues,
   KanbanStage,
@@ -84,13 +83,18 @@ export default function AddApplicationModal({
 
     return {
       ...EMPTY_FORM,
-      stageId: defaultStageId ?? stageOptions[0]?.id ?? FINAL_STAGE_ID,
+      stageId: defaultStageId ?? stageOptions[0]?.id ?? '',
     };
   }, [card, defaultStageId, stageOptions]);
   const [form, setForm] = useState<KanbanFormValues>(initialForm);
   const [tagInput, setTagInput] = useState('');
   const selectedStage = stageOptions.find((stage) => stage.id === form.stageId);
-  const isFinalStage = form.stageId === FINAL_STAGE_ID;
+  const fixedStageResult =
+    selectedStage?.kind === 'passed'
+      ? '합격'
+      : selectedStage?.kind === 'rejected'
+        ? '불합격'
+        : null;
 
   function handleChange<K extends keyof KanbanFormValues>(
     key: K,
@@ -133,7 +137,7 @@ export default function AddApplicationModal({
       noResponseDays: form.noResponseDays
         ? Number(form.noResponseDays)
         : undefined,
-      finalResult: isFinalStage ? form.finalResult : null,
+      finalResult: fixedStageResult ?? null,
       memo: form.memo.trim() || undefined,
     }, card?.id);
     onClose();
@@ -275,35 +279,21 @@ export default function AddApplicationModal({
           </div>
           </section>
 
-          {isFinalStage && (
+          {fixedStageResult && (
             <section className={styles.section}>
               <div className={styles.sectionHeader}>
                 <h3 className={styles.sectionTitle}>최종 결과</h3>
               </div>
               <div className={styles.field}>
-              <div className={styles.resultButtons}>
-                {(['합격', '불합격'] as const).map((result) => (
+                <div className={styles.resultButtons}>
                   <button
-                    key={result}
                     type="button"
-                    className={`${styles.resultBtn} ${
-                      form.finalResult === result ? styles.resultBtnActive : ''
-                    }`}
-                    onClick={() => handleChange('finalResult', result)}
+                    className={`${styles.resultBtn} ${styles.resultBtnActive}`}
+                    disabled
                   >
-                    {result}
+                    {fixedStageResult}
                   </button>
-                ))}
-                <button
-                  type="button"
-                  className={`${styles.resultBtn} ${
-                    form.finalResult === null ? styles.resultBtnActive : ''
-                  }`}
-                  onClick={() => handleChange('finalResult', null)}
-                >
-                  미정
-                </button>
-              </div>
+                </div>
               </div>
             </section>
           )}
