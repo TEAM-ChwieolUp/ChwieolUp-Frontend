@@ -1,35 +1,60 @@
 'use client';
 
-import { Building2, Calendar, MapPin, X, ExternalLink, Pencil, Trash2 } from 'lucide-react';
-import { CalendarEvent } from './types';
+import { Building2, Calendar, Download, Pencil, Trash2, X } from 'lucide-react';
+import { CalendarEvent, CATEGORY_LABELS } from './types';
 import styles from './EventDetailPopover.module.scss';
 
 interface EventDetailPopoverProps {
   event: CalendarEvent;
+  isExporting?: boolean;
   onClose: () => void;
   onEdit: () => void;
   onDelete: () => void;
+  onExport: () => void;
 }
 
-const CATEGORY_LABEL: Record<string, string> = {
-  '채용공고': '채용공고',
-  '내 프로세스': '내 프로세스',
-  '개인 일정': '개인 일정',
-};
+function formatDateTime(startAt: string, endAt?: string | null) {
+  const start = new Date(startAt);
+  const sameDay =
+    endAt &&
+    new Date(endAt).toDateString() === start.toDateString();
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+  const base = `${start.getFullYear()}년 ${start.getMonth() + 1}월 ${start.getDate()}일`;
+  const startTime = `${String(start.getHours()).padStart(2, '0')}:${String(
+    start.getMinutes()
+  ).padStart(2, '0')}`;
+
+  if (!endAt) {
+    return `${base} · 종일`;
+  }
+
+  const end = new Date(endAt);
+  const endTime = `${String(end.getHours()).padStart(2, '0')}:${String(
+    end.getMinutes()
+  ).padStart(2, '0')}`;
+
+  if (sameDay) {
+    return `${base} · ${startTime} - ${endTime}`;
+  }
+
+  return `${base} · ${startTime} ~ ${end.getFullYear()}년 ${end.getMonth() + 1}월 ${end.getDate()}일 ${endTime}`;
 }
 
-export default function EventDetailPopover({ event, onClose, onEdit, onDelete }: EventDetailPopoverProps) {
+export default function EventDetailPopover({
+  event,
+  isExporting = false,
+  onClose,
+  onEdit,
+  onDelete,
+  onExport,
+}: EventDetailPopoverProps) {
   return (
     <>
       <div className={styles.backdrop} onClick={onClose} />
       <div className={styles.popover}>
         <div className={styles.header}>
-          <span className={`${styles.categoryBadge} ${styles[event.category.replace(' ', '_')]}`}>
-            {CATEGORY_LABEL[event.category]}
+          <span className={`${styles.categoryBadge} ${styles[event.category]}`}>
+            {CATEGORY_LABELS[event.category]}
           </span>
           <button className={styles.closeBtn} onClick={onClose} aria-label="닫기">
             <X size={16} />
@@ -41,35 +66,16 @@ export default function EventDetailPopover({ event, onClose, onEdit, onDelete }:
         <div className={styles.meta}>
           <div className={styles.metaRow}>
             <Calendar size={14} className={styles.metaIcon} />
-            <span>
-              {formatDate(event.date)}
-              {event.time ? ` · ${event.time}` : ''}
-              {event.allDay ? ' · 종일' : ''}
-            </span>
+            <span>{formatDateTime(event.startAt, event.endAt)}</span>
           </div>
 
-          {event.company && (
+          {event.applicationName && (
             <div className={styles.metaRow}>
               <Building2 size={14} className={styles.metaIcon} />
-              <span>{event.company}</span>
-            </div>
-          )}
-
-          {event.location && (
-            <div className={styles.metaRow}>
-              <MapPin size={14} className={styles.metaIcon} />
-              <span>{event.location}</span>
+              <span>{event.applicationName}</span>
             </div>
           )}
         </div>
-
-        {event.type && (
-          <span className={styles.typeTag}>{event.type}</span>
-        )}
-
-        {event.description && (
-          <p className={styles.description}>{event.description}</p>
-        )}
 
         <div className={styles.actionRow}>
           <button type="button" className={styles.secondaryBtn} onClick={onEdit}>
@@ -82,9 +88,14 @@ export default function EventDetailPopover({ event, onClose, onEdit, onDelete }:
           </button>
         </div>
 
-        <button type="button" className={styles.gcalBtn}>
-          <ExternalLink size={14} />
-          Google Calendar에 추가
+        <button
+          type="button"
+          className={styles.gcalBtn}
+          onClick={onExport}
+          disabled={isExporting}
+        >
+          <Download size={14} />
+          {isExporting ? '내보내는 중...' : 'iCalendar로 내보내기'}
         </button>
       </div>
     </>
