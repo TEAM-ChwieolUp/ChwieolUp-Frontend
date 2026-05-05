@@ -34,8 +34,8 @@ export default function StageSettingsModal({
     setDraftStages(stages);
   }, [stages]);
 
-  const customStageCount = useMemo(
-    () => draftStages.filter((stage) => stage.kind === 'custom').length,
+  const customStageIds = useMemo(
+    () => draftStages.filter((stage) => stage.kind === 'custom').map((stage) => stage.id),
     [draftStages]
   );
 
@@ -55,8 +55,8 @@ export default function StageSettingsModal({
   function addStage() {
     const nextStage: KanbanStage = {
       id: createStageId('새 단계'),
-      name: `새 단계 ${customStageCount + 1}`,
-      color: STAGE_COLOR_PRESETS[customStageCount % STAGE_COLOR_PRESETS.length],
+      name: `새 단계 ${customStageIds.length + 1}`,
+      color: STAGE_COLOR_PRESETS[customStageIds.length % STAGE_COLOR_PRESETS.length],
       displayOrder: draftStages.length - 2,
       category: 'IN_PROGRESS',
       kind: 'custom',
@@ -79,28 +79,45 @@ export default function StageSettingsModal({
 
   function moveStage(stageId: string, direction: -1 | 1) {
     setDraftStages((prev) => {
-      const index = prev.findIndex((stage) => stage.id === stageId);
-      const targetIndex = index + direction;
+      const customStages = prev.filter((stage) => stage.kind === 'custom');
+      const fixedStages = prev.filter((stage) => stage.kind !== 'custom');
+      const customIndex = customStages.findIndex((stage) => stage.id === stageId);
+      const targetCustomIndex = customIndex + direction;
 
       if (
-        index === -1 ||
-        targetIndex < 0 ||
-        targetIndex >= prev.length ||
-        prev[index]?.kind !== 'custom' ||
-        prev[targetIndex]?.kind !== 'custom'
+        customIndex === -1 ||
+        targetCustomIndex < 0 ||
+        targetCustomIndex >= customStages.length
       ) {
         return prev;
       }
 
-      const next = [...prev];
-      [next[index], next[targetIndex]] = [next[targetIndex], next[index]];
-      return next;
+      const nextCustomStages = [...customStages];
+      [nextCustomStages[customIndex], nextCustomStages[targetCustomIndex]] = [
+        nextCustomStages[targetCustomIndex],
+        nextCustomStages[customIndex],
+      ];
+
+      return [...nextCustomStages, ...fixedStages];
     });
   }
 
   function removeStage(stageId: string) {
-    if (customStageCount <= 1) return;
     setDraftStages((prev) => prev.filter((stage) => stage.id !== stageId));
+  }
+
+  function handleRemoveStage(stage: KanbanStage, stageCardCount: number) {
+    if (stage.kind !== 'custom') {
+      window.alert('고정 단계는 삭제할 수 없습니다.');
+      return;
+    }
+
+    if (stageCardCount > 0) {
+      window.alert(`"${stage.name}" 단계에 카드 ${stageCardCount}개가 남아 있어 삭제할 수 없습니다.`);
+      return;
+    }
+
+    removeStage(stage.id);
   }
 
   async function handleApply() {
@@ -136,9 +153,13 @@ export default function StageSettingsModal({
         </div>
 
         <div className={styles.body}>
-          {draftStages.map((stage, index) => {
+          {draftStages.map((stage) => {
             const isCustom = stage.kind === 'custom';
             const stageCardCount = stageCardCounts[stage.id] ?? 0;
+            const customStageIndex = customStageIds.findIndex((id) => id === stage.id);
+            const canMoveUp = isCustom && customStageIndex > 0 && !isSaving;
+            const canMoveDown =
+              isCustom && customStageIndex !== -1 && customStageIndex < customStageIds.length - 1 && !isSaving;
 
             return (
               <div key={stage.id} className={styles.stageCard}>
@@ -162,8 +183,12 @@ export default function StageSettingsModal({
                         <button
                           type="button"
                           className={styles.iconBtn}
-                          onClick={() => moveStage(stage.id, -1)}
-                          disabled={index === 0 || isSaving}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            moveStage(stage.id, -1);
+                          }}
+                          disabled={!canMoveUp}
                           aria-label="위로 이동"
                         >
                           <ArrowUp size={16} />
@@ -171,8 +196,12 @@ export default function StageSettingsModal({
                         <button
                           type="button"
                           className={styles.iconBtn}
-                          onClick={() => moveStage(stage.id, 1)}
-                          disabled={draftStages[index + 1]?.kind !== 'custom' || isSaving}
+                          onClick={(event) => {
+                            event.preventDefault();
+                            event.stopPropagation();
+                            moveStage(stage.id, 1);
+                          }}
+                          disabled={!canMoveDown}
                           aria-label="아래로 이동"
                         >
                           <ArrowDown size={16} />
@@ -180,8 +209,8 @@ export default function StageSettingsModal({
                         <button
                           type="button"
                           className={styles.iconBtn}
-                          onClick={() => removeStage(stage.id)}
-                          disabled={customStageCount <= 1 || stageCardCount > 0 || isSaving}
+                          onClick={() => handleRemoveStage(stage, stageCardCount)}
+                          disabled={isSaving}
                           aria-label="단계 삭제"
                         >
                           <Trash2 size={16} />
