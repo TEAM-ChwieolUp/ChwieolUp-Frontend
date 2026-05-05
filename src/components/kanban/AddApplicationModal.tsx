@@ -6,7 +6,6 @@ import {
   KanbanCard,
   KanbanFormValues,
   KanbanStage,
-  TAG_SUGGESTIONS,
   Tag,
 } from './types';
 import styles from './AddApplicationModal.module.scss';
@@ -15,7 +14,9 @@ interface AddApplicationModalProps {
   card?: KanbanCard | null;
   defaultStageId?: string;
   stages: KanbanStage[];
+  tagOptions: Tag[];
   onClose: () => void;
+  onCreateTag: (name: string) => Promise<Tag>;
   onSave: (card: Omit<KanbanCard, 'id'>, existingId?: string) => void;
   onDelete?: (cardId: string) => void;
 }
@@ -58,7 +59,9 @@ export default function AddApplicationModal({
   card,
   defaultStageId,
   stages,
+  tagOptions,
   onClose,
+  onCreateTag,
   onSave,
   onDelete,
 }: AddApplicationModalProps) {
@@ -112,15 +115,22 @@ export default function AddApplicationModal({
     }));
   }
 
-  function addCustomTag() {
+  async function handleCreateTag() {
     const nextTag = tagInput.trim();
     if (!nextTag) return;
 
-    setForm((prev) => ({
-      ...prev,
-      tags: prev.tags.includes(nextTag) ? prev.tags : [...prev.tags, nextTag],
-    }));
-    setTagInput('');
+    try {
+      const createdTag = await onCreateTag(nextTag);
+      setForm((prev) => ({
+        ...prev,
+        tags: prev.tags.includes(createdTag) ? prev.tags : [...prev.tags, createdTag],
+      }));
+      setTagInput('');
+    } catch (error) {
+      window.alert(
+        error instanceof Error ? error.message : '태그 생성 중 오류가 발생했습니다.',
+      );
+    }
   }
 
   function handleSubmit(e: React.FormEvent) {
@@ -304,7 +314,7 @@ export default function AddApplicationModal({
             </div>
             <div className={styles.field}>
             <div className={styles.tagGrid}>
-              {TAG_SUGGESTIONS.map((tag) => (
+              {tagOptions.map((tag) => (
                 <button
                   key={tag}
                   type="button"
@@ -327,14 +337,14 @@ export default function AddApplicationModal({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    addCustomTag();
+                    void handleCreateTag();
                   }
                 }}
               />
               <button
                 type="button"
                 className={styles.addTagBtn}
-                onClick={addCustomTag}
+                onClick={() => void handleCreateTag()}
               >
                 태그 추가
               </button>

@@ -19,12 +19,14 @@ import {
   stageKeys,
   updateStage,
 } from '@/features/kanban/api/stages';
+import { createTag, listTags, tagKeys } from '@/features/kanban/api/tags';
 import KanbanCard from './KanbanCard';
 import AddApplicationModal from './AddApplicationModal';
 import StageSettingsModal from './StageSettingsModal';
 import styles from './KanbanBoard.module.scss';
 
 const LEGACY_STAGE_ORDER = ['applied', 'screening', 'process', 'interview'] as const;
+const DEFAULT_TAG_COLOR = '#64748b';
 
 function mapCardToStageResult(stage: KanbanStage | undefined) {
   if (!stage) {
@@ -61,6 +63,10 @@ export default function KanbanBoard() {
   const { data: stageData, isLoading: isStagesLoading } = useQuery({
     queryKey: stageKeys.all,
     queryFn: listStages,
+  });
+  const { data: tagData = [] } = useQuery({
+    queryKey: tagKeys.all,
+    queryFn: listTags,
   });
 
   useEffect(() => {
@@ -213,9 +219,31 @@ export default function KanbanBoard() {
   const suggestedTags = useMemo(() => {
     const ordered = new Map<string, string>();
     TAG_SUGGESTIONS.forEach((tag) => ordered.set(tag, tag));
+    tagData.forEach((tag) => ordered.set(tag.name, tag.name));
     cards.flatMap((card) => card.tags).forEach((tag) => ordered.set(tag, tag));
     return Array.from(ordered.values());
-  }, [cards]);
+  }, [cards, tagData]);
+
+  const createTagMutation = useMutation({
+    mutationFn: async (tagName: string) =>
+      createTag({
+        name: tagName,
+        color: DEFAULT_TAG_COLOR,
+      }),
+    onSuccess: (createdTag) => {
+      queryClient.setQueryData(tagKeys.all, (current: typeof tagData | undefined) => {
+        if (!current) {
+          return [createdTag];
+        }
+
+        if (current.some((tag) => tag.id === createdTag.id)) {
+          return current;
+        }
+
+        return [...current, createdTag].sort((a, b) => a.id - b.id);
+      });
+    },
+  });
 
   const stageCardCounts = useMemo(
     () =>
@@ -262,6 +290,34 @@ export default function KanbanBoard() {
   function openCardDetail(card: KanbanCardType) {
     setSelectedCardId(card.id);
     setShowAddModal(true);
+  }
+
+  async function handleCreateTag(tagName: string) {
+    const normalizedTagName = tagName.trim();
+    if (!normalizedTagName) {
+      throw new Error('태그명을 입력해 주세요.');
+    }
+
+    const existingTag = suggestedTags.find(
+      (tag) => tag.toLowerCase() === normalizedTagName.toLowerCase()
+    );
+
+    if (existingTag) {
+      return existingTag;
+    }
+
+    try {
+      const createdTag = await createTagMutation.mutateAsync(normalizedTagName);
+      return createdTag.name;
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw new Error(error.message);
+      }
+
+      throw error instanceof Error
+        ? error
+        : new Error('태그 생성 중 오류가 발생했습니다.');
+    }
   }
 
   async function handleSaveStages(nextStages: KanbanStage[]) {
@@ -495,7 +551,9 @@ export default function KanbanBoard() {
           card={selectedCard}
           defaultStageId={defaultStageId}
           stages={stages}
+          tagOptions={suggestedTags}
           onClose={() => setShowAddModal(false)}
+          onCreateTag={handleCreateTag}
           onSave={handleUpsertCard}
           onDelete={handleDeleteCard}
         />
