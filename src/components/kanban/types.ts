@@ -2,6 +2,7 @@ export type FinalResult = '합격' | '불합격' | null;
 export type Tag = string;
 export type StageCategory = 'IN_PROGRESS' | 'PASSED' | 'REJECTED';
 export type KanbanStageKind = 'custom' | 'passed' | 'rejected';
+export type Priority = 'LOW' | 'NORMAL' | 'HIGH';
 
 export interface KanbanStage {
   id: string;
@@ -18,12 +19,17 @@ export interface KanbanCard {
   company: string;
   position: string;
   appliedDate: string; // 'M/D' 형식
+  appliedAt?: string;
+  deadlineAt?: string | null;
   stageId: string;
   tags: Tag[];
+  tagIds?: number[];
   nextAction?: string;
   noResponseDays?: number; // 무응답 N일째
   finalResult?: FinalResult;
   memo?: string;
+  priority?: Priority;
+  jobPostingUrl?: string;
 }
 
 export interface KanbanFormValues {
