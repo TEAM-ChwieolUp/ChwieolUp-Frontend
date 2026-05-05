@@ -1,25 +1,36 @@
 import { LEGACY_AUTH_COOKIE, LOGIN_ROUTE, REFRESH_ENDPOINT } from './config';
 import { createApiError, buildRequestUrl, parseResponseBody } from './http';
-import { clearAccessToken, setAccessToken } from './token-store';
-import type { RefreshResponse } from './types';
+import {
+  clearAuthSession,
+  markAuthBootstrapped,
+  markAuthBootstrapping,
+  setAuthSession,
+} from '@/store/auth-store';
+import type { AuthSessionPayload, RefreshResponse } from './types';
 
-let refreshPromise: Promise<string> | null = null;
+let refreshPromise: Promise<AuthSessionPayload> | null = null;
 let authFailureHandler: (() => void) | null = null;
 
-function getAccessTokenFromResponse(payload: RefreshResponse | null) {
+function getSessionFromResponse(payload: RefreshResponse | null) {
   if (!payload) {
     return null;
   }
 
-  if (typeof payload.accessToken === 'string') {
-    return payload.accessToken;
+  const accessToken =
+    typeof payload.accessToken === 'string'
+      ? payload.accessToken
+      : typeof payload.data?.accessToken === 'string'
+        ? payload.data.accessToken
+        : null;
+
+  if (!accessToken) {
+    return null;
   }
 
-  if (typeof payload.data?.accessToken === 'string') {
-    return payload.data.accessToken;
-  }
-
-  return null;
+  return {
+    accessToken,
+    user: payload.user ?? payload.data?.user ?? null,
+  };
 }
 
 function defaultAuthFailureHandler() {
@@ -46,14 +57,14 @@ async function requestRefreshToken() {
   }
 
   const payload = (await parseResponseBody(response)) as RefreshResponse | null;
-  const nextAccessToken = getAccessTokenFromResponse(payload);
+  const session = getSessionFromResponse(payload);
 
-  if (!nextAccessToken) {
+  if (!session) {
     throw new Error('Refresh response did not include an access token.');
   }
 
-  setAccessToken(nextAccessToken);
-  return nextAccessToken;
+  setAuthSession(session);
+  return session;
 }
 
 export function onAuthFailure(handler: (() => void) | null) {
@@ -61,7 +72,7 @@ export function onAuthFailure(handler: (() => void) | null) {
 }
 
 export function notifyAuthFailure() {
-  clearAccessToken();
+  clearAuthSession();
 
   if (authFailureHandler) {
     authFailureHandler();
@@ -81,17 +92,22 @@ export async function refreshAccessToken() {
   try {
     return await refreshPromise;
   } catch (error) {
-    clearAccessToken();
+    clearAuthSession();
     throw error;
   }
 }
 
 export async function bootstrapSession() {
+  markAuthBootstrapping();
+
   try {
     await refreshAccessToken();
   } catch {
-    clearAccessToken();
+    clearAuthSession();
+    return;
   }
+
+  markAuthBootstrapped();
 }
 
 export function logoutSession() {

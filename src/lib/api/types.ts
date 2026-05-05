@@ -9,6 +9,11 @@ export type QueryParamValue =
   | Array<string | number | boolean>;
 
 export type QueryParams = Record<string, QueryParamValue>;
+export type AuthStatus =
+  | 'idle'
+  | 'bootstrapping'
+  | 'authenticated'
+  | 'anonymous';
 
 export interface ApiRequestOptions
   extends Omit<RequestInit, 'body' | 'credentials' | 'headers' | 'method'> {
@@ -26,11 +31,28 @@ export interface ApiSuccessResponse<T> {
   message?: string;
 }
 
+export interface AuthUser {
+  id: number;
+  email: string;
+  name: string;
+  profileImageUrl: string | null;
+}
+
 export interface AccessTokenPayload {
   accessToken: string;
 }
 
+export interface AuthResponseData extends AccessTokenPayload {
+  user?: AuthUser | null;
+}
+
+export interface AuthSessionPayload {
+  accessToken: string;
+  user: AuthUser | null;
+}
+
 export interface RefreshResponse {
   accessToken?: string;
-  data?: Partial<AccessTokenPayload>;
+  user?: AuthUser | null;
+  data?: Partial<AuthResponseData>;
 }

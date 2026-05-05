@@ -1,17 +1,11 @@
-let accessToken: string | null = null;
-
-const listeners = new Set<(token: string | null) => void>();
+import { useAuthStore } from '@/store/auth-store';
 
 export function getAccessToken() {
-  return accessToken;
+  return useAuthStore.getState().accessToken;
 }
 
 export function setAccessToken(token: string | null) {
-  accessToken = token;
-
-  listeners.forEach((listener) => {
-    listener(accessToken);
-  });
+  useAuthStore.getState().setAccessToken(token);
 }
 
 export function clearAccessToken() {
@@ -19,9 +13,9 @@ export function clearAccessToken() {
 }
 
 export function subscribeAccessToken(listener: (token: string | null) => void) {
-  listeners.add(listener);
-
-  return () => {
-    listeners.delete(listener);
-  };
+  return useAuthStore.subscribe((state, previousState) => {
+    if (state.accessToken !== previousState.accessToken) {
+      listener(state.accessToken);
+    }
+  });
 }
