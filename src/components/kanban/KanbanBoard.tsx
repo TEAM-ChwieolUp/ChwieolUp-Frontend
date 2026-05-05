@@ -197,6 +197,7 @@ export default function KanbanBoard() {
       const currentStages = stages;
       const currentStageMap = new Map(currentStages.map((stage) => [stage.id, stage]));
       const nextStageMap = new Map(nextStages.map((stage) => [stage.id, stage]));
+      const nextCustomStages = nextStages.filter((stage) => stage.kind === 'custom');
 
       const removedStages = currentStages.filter((stage) => !nextStageMap.has(stage.id));
 
@@ -214,7 +215,7 @@ export default function KanbanBoard() {
         await deleteStage(stage.id);
       }
 
-      for (const [index, stage] of nextStages.entries()) {
+      for (const [index, stage] of nextCustomStages.entries()) {
         const currentStage = currentStageMap.get(stage.id);
 
         if (!currentStage) {
@@ -223,6 +224,10 @@ export default function KanbanBoard() {
             color: stage.color,
             displayOrder: index,
           });
+          continue;
+        }
+
+        if (currentStage.kind !== 'custom') {
           continue;
         }
 
