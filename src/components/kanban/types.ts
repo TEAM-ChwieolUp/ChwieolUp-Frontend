@@ -1,12 +1,16 @@
 export type FinalResult = '합격' | '불합격' | null;
 export type Tag = string;
+export type StageCategory = 'IN_PROGRESS' | 'PASSED' | 'REJECTED';
+export type KanbanStageKind = 'custom' | 'passed' | 'rejected';
 
 export interface KanbanStage {
   id: string;
   name: string;
   color: string;
-  kind: 'custom' | 'final';
-  locked?: boolean;
+  displayOrder: number;
+  category: StageCategory;
+  kind: KanbanStageKind;
+  locked: boolean;
 }
 
 export interface KanbanCard {
@@ -34,47 +38,68 @@ export interface KanbanFormValues {
   memo: string;
 }
 
-export const FINAL_STAGE_ID = 'final-result';
-
-export const FINAL_STAGE: KanbanStage = {
-  id: FINAL_STAGE_ID,
-  name: '최종 결과',
-  color: '#22c55e',
-  kind: 'final',
-  locked: true,
-};
-
 export const DEFAULT_CUSTOM_STAGES: KanbanStage[] = [
   {
     id: 'applied',
     name: '지원 완료',
     color: '#64748b',
+    displayOrder: 0,
+    category: 'IN_PROGRESS',
     kind: 'custom',
+    locked: false,
   },
   {
     id: 'screening',
     name: '서류 검토',
     color: '#3b82f6',
+    displayOrder: 1,
+    category: 'IN_PROGRESS',
     kind: 'custom',
+    locked: false,
   },
   {
     id: 'process',
     name: '전형 진행',
     color: '#f59e0b',
+    displayOrder: 2,
+    category: 'IN_PROGRESS',
     kind: 'custom',
+    locked: false,
   },
   {
     id: 'interview',
     name: '면접',
     color: '#f97316',
+    displayOrder: 3,
+    category: 'IN_PROGRESS',
     kind: 'custom',
+    locked: false,
   },
 ];
 
 export const INITIAL_STAGES: KanbanStage[] = [
   ...DEFAULT_CUSTOM_STAGES,
-  FINAL_STAGE,
+  {
+    id: 'passed',
+    name: '최종 합격',
+    color: '#22c55e',
+    displayOrder: 4,
+    category: 'PASSED',
+    kind: 'passed',
+    locked: true,
+  },
+  {
+    id: 'rejected',
+    name: '불합격',
+    color: '#ef4444',
+    displayOrder: 5,
+    category: 'REJECTED',
+    kind: 'rejected',
+    locked: true,
+  },
 ];
+
+export const FIXED_STAGE_KINDS: KanbanStageKind[] = ['passed', 'rejected'];
 
 export const TAG_SUGGESTIONS: Tag[] = [
   '관심기업',
