@@ -1,11 +1,13 @@
 'use client';
 
 import { ArrowRight, BarChart3, CircleHelp, Map, Network } from 'lucide-react';
-
 import Image from 'next/image';
 import { Manrope } from 'next/font/google';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { useEffect } from 'react';
+import { startSocialLogin } from '@/lib/api';
+import { useAuthStore } from '@/store/auth-store';
 import styles from './login.module.css';
-import { useRouter } from 'next/navigation';
 
 const manrope = Manrope({
   subsets: ['latin'],
@@ -53,11 +55,17 @@ const socialButtons = [
 
 export default function LoginPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const authStatus = useAuthStore((state) => state.status);
+  const isBootstrapped = useAuthStore((state) => state.isBootstrapped);
 
-  const handleLogin = () => {
-    document.cookie = 'chwieolup_auth=1; path=/; max-age=604800; samesite=lax';
-    router.replace('/');
-  };
+  useEffect(() => {
+    if (isBootstrapped && authStatus === 'authenticated') {
+      router.replace('/');
+    }
+  }, [authStatus, isBootstrapped, router]);
+
+  const error = searchParams.get('error');
 
   return (
     <main className={`${styles.page} ${manrope.className}`}>
@@ -126,6 +134,18 @@ export default function LoginPage() {
             <p className={styles.formDescription}>
               지원 현황, 일정, 회고를 한 번에 관리해보세요.
             </p>
+            {error === 'oauth_callback' ? (
+              <p
+                style={{
+                  margin: '12px 0 0',
+                  color: '#b91c1c',
+                  fontSize: '13px',
+                  fontWeight: 600,
+                }}
+              >
+                로그인 처리에 실패했습니다. 다시 시도해 주세요.
+              </p>
+            ) : null}
           </div>
 
           <div className={styles.socialList}>
@@ -134,8 +154,9 @@ export default function LoginPage() {
                 key={button.name}
                 className={`${styles.socialButton} ${button.className}`}
                 type='button'
-                onClick={handleLogin}
+                onClick={() => startSocialLogin(button.name)}
                 aria-label={button.label}
+                disabled={authStatus === 'bootstrapping'}
               >
                 <Image
                   className={styles.socialIcon}
