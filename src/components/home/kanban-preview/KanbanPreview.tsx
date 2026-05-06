@@ -6,56 +6,11 @@ import { ArrowRight, GripVertical } from 'lucide-react';
 
 import { listApplications, applicationKeys } from '@/features/kanban/api/applications';
 import { ApiError } from '@/lib/api';
+import cardStyles from '@/components/kanban/KanbanCard.module.scss';
 import styles from './KanbanPreview.module.scss';
 
 function getCardClassNames(...classNames: Array<string | false | undefined>) {
   return classNames.filter(Boolean).join(' ');
-}
-
-function formatMonthDay(value?: string | null) {
-  if (!value) {
-    return null;
-  }
-
-  const date = new Date(value);
-
-  if (Number.isNaN(date.getTime())) {
-    return null;
-  }
-
-  return `${date.getMonth() + 1}/${date.getDate()}`;
-}
-
-function getDueText(deadlineAt?: string | null, appliedAt?: string) {
-  if (deadlineAt) {
-    const now = new Date();
-    const deadline = new Date(deadlineAt);
-
-    if (!Number.isNaN(deadline.getTime())) {
-      const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
-      const startOfDeadline = new Date(
-        deadline.getFullYear(),
-        deadline.getMonth(),
-        deadline.getDate()
-      );
-      const diffDays = Math.round(
-        (startOfDeadline.getTime() - startOfToday.getTime()) / 86400000
-      );
-
-      if (diffDays === 0) {
-        return '오늘 마감';
-      }
-
-      if (diffDays > 0) {
-        return `D-${diffDays}`;
-      }
-
-      return `마감 ${Math.abs(diffDays)}일 지남`;
-    }
-  }
-
-  const appliedDate = formatMonthDay(appliedAt);
-  return appliedDate ? `지원일 ${appliedDate}` : '일정 정보 없음';
 }
 
 function getApiErrorMessage(error: unknown) {
@@ -136,27 +91,26 @@ export default function KanbanPreview() {
               column.cards.map((card) => (
                 <article
                   key={card.id}
-                  className={styles.card}
-                  style={{ borderLeftColor: column.color }}
+                  className={cardStyles.card}
                 >
-                  <div className={styles.cardTopRow}>
-                    <span className={styles.dragHandle} aria-hidden='true'>
+                  <div className={cardStyles.cardTopRow}>
+                    <span className={cardStyles.dragHandle} aria-hidden='true'>
                       <GripVertical size={14} />
                     </span>
 
-                    <div className={styles.cardMeta}>
+                    <div className={cardStyles.cardMeta}>
                       <span
-                        className={styles.stagePip}
+                        className={cardStyles.stagePip}
                         style={{ background: column.color }}
                       />
-                      <span className={styles.stageLabel}>{column.title}</span>
+                      <span className={cardStyles.stageLabel}>{column.title}</span>
                     </div>
 
                     {card.finalResult && (
                       <span
                         className={getCardClassNames(
-                          styles.resultBadge,
-                          card.finalResult === '합격' ? styles.pass : styles.fail,
+                          cardStyles.resultBadge,
+                          card.finalResult === '합격' ? cardStyles.pass : cardStyles.fail,
                         )}
                       >
                         {card.finalResult}
@@ -164,21 +118,17 @@ export default function KanbanPreview() {
                     )}
                   </div>
 
-                  <div className={styles.cardBody}>
-                    <h3 className={styles.company}>{card.company}</h3>
-                    <p className={styles.position}>{card.position}</p>
-                  </div>
+                  <h4 className={cardStyles.company}>{card.company}</h4>
+                  <p className={cardStyles.position}>{card.position}</p>
 
-                  <div className={styles.dateRow}>
-                    <span className={styles.date}>
-                      {getDueText(card.deadlineAt, card.appliedAt)}
-                    </span>
+                  <div className={cardStyles.dateRow}>
+                    <span className={cardStyles.date}>지원일 {card.appliedDate}</span>
                     {card.noResponseDays !== undefined && (
                       <span
                         className={getCardClassNames(
-                          styles.noResponseChip,
-                          getNoResponseLevel(card.noResponseDays) === 'danger' && styles.danger,
-                          getNoResponseLevel(card.noResponseDays) === 'warning' && styles.warning,
+                          cardStyles.noResponseChip,
+                          getNoResponseLevel(card.noResponseDays) === 'danger' && cardStyles.danger,
+                          getNoResponseLevel(card.noResponseDays) === 'warning' && cardStyles.warning,
                         )}
                       >
                         무응답 {card.noResponseDays}일
@@ -187,25 +137,26 @@ export default function KanbanPreview() {
                   </div>
 
                   {card.tags.length > 0 && (
-                    <div className={styles.tags}>
-                      {card.tags.slice(0, 3).map((tag) => (
-                        <span key={tag} className={styles.tag}>
+                    <div className={cardStyles.tags}>
+                      {card.tags.map((tag) => (
+                        <span key={tag} className={cardStyles.tag}>
                           {tag}
                         </span>
                       ))}
                     </div>
                   )}
 
+                  {card.nextAction && (
+                    <p className={cardStyles.nextAction}>→ {card.nextAction}</p>
+                  )}
+
                   {card.memo && (
-                    <p className={styles.memoPreview}>{card.memo}</p>
+                    <p className={cardStyles.memoPreview}>{card.memo}</p>
                   )}
                 </article>
               ))
             ) : (
               <div className={styles.emptyCard}>
-                <div className={styles.emptyIcon} aria-hidden='true'>
-                  +
-                </div>
                 <span>{isLoading ? '보드 데이터를 불러오는 중' : '이 단계의 카드가 없습니다.'}</span>
               </div>
             )}
