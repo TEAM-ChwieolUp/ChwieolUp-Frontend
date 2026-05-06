@@ -1,80 +1,483 @@
 'use client';
 
-import { useState, useMemo } from 'react';
+import { useMemo, useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
-import { Retrospective, RetroStage, STAGE_COLORS } from './types';
-import { dummyRetros } from './dummyData';
+import { KanbanStage } from '@/components/kanban/types';
+import { ApiError } from '@/lib/api';
+import { listApplications, applicationKeys } from '@/features/kanban/api/applications';
+import { listStages, stageKeys } from '@/features/kanban/api/stages';
+import {
+  addRetrospectiveItem,
+  applyRetrospectiveTemplate,
+  createApplicationRetrospective,
+  deleteRetrospective,
+  deleteRetrospectiveItem,
+  generateAiRetrospectiveQuestions,
+  getRetrospective,
+  listApplicationRetrospectives,
+  listRetrospectiveTemplates,
+  retrospectiveKeys,
+  updateRetrospectiveItem,
+} from '@/features/retrospective/api/retrospectives';
 import RetroDetail from './RetroDetail';
+import {
+  OVERALL_STAGE_COLOR,
+  OVERALL_STAGE_NAME,
+  RetrospectiveDetail,
+  RetrospectiveEditorForm,
+  RetrospectiveItem,
+  RetrospectiveSummary,
+} from './types';
 import WriteRetroModal from './WriteRetroModal';
 import styles from './RetroView.module.scss';
 
-type FilterTab = '전체' | RetroStage;
-const TABS: FilterTab[] = ['전체', '서류', '코테', '면접', '최종'];
+type FilterTab = '전체' | typeof OVERALL_STAGE_NAME | string;
 
 function formatDateShort(dateStr: string) {
-  const d = new Date(dateStr + 'T00:00:00');
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일`;
+  const date = new Date(dateStr);
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일`;
+}
+
+function getApiErrorMessage(error: unknown, fallback: string) {
+  if (error instanceof ApiError) {
+    return error.message;
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return fallback;
+}
+
+function mapSummaryWithContext(
+  summary: {
+    id: string;
+    applicationId: string;
+    stageId: string | null;
+    itemCount: number;
+    createdAt: string;
+    updatedAt: string;
+  },
+  applications: Awaited<ReturnType<typeof listApplications>>['cards'],
+  stages: KanbanStage[]
+): RetrospectiveSummary | null {
+  const application = applications.find((card) => card.id === summary.applicationId);
+
+  if (!application) {
+    return null;
+  }
+
+  const stage = summary.stageId
+    ? stages.find((entry) => entry.id === summary.stageId)
+    : null;
+
+  return {
+    id: summary.id,
+    applicationId: summary.applicationId,
+    stageId: summary.stageId,
+    itemCount: summary.itemCount,
+    createdAt: summary.createdAt,
+    updatedAt: summary.updatedAt,
+    company: application.company,
+    position: application.position,
+    stageName: stage?.name ?? OVERALL_STAGE_NAME,
+    stageColor: stage?.color ?? OVERALL_STAGE_COLOR,
+    isOverall: !summary.stageId,
+  };
+}
+
+function mapDetailWithContext(
+  detail: Awaited<ReturnType<typeof getRetrospective>>,
+  applications: Awaited<ReturnType<typeof listApplications>>['cards'],
+  stages: KanbanStage[],
+  summaries: RetrospectiveSummary[]
+): RetrospectiveDetail | null {
+  const application = applications.find((card) => card.id === detail.applicationId);
+
+  if (!application) {
+    return null;
+  }
+
+  const summary = summaries.find((entry) => entry.id === detail.id);
+  const stage = detail.stageId
+    ? stages.find((entry) => entry.id === detail.stageId)
+    : null;
+
+  return {
+    id: detail.id,
+    applicationId: detail.applicationId,
+    stageId: detail.stageId,
+    itemCount: detail.items.length,
+    items: detail.items,
+    createdAt: detail.createdAt,
+    updatedAt: detail.updatedAt,
+    company: application.company,
+    position: application.position,
+    stageName: stage?.name ?? summary?.stageName ?? OVERALL_STAGE_NAME,
+    stageColor: stage?.color ?? summary?.stageColor ?? OVERALL_STAGE_COLOR,
+    isOverall: !detail.stageId,
+  };
+}
+
+function buildRetrospectiveDetail(
+  payload: {
+    retrospectiveId: string;
+    applicationId: string;
+    stageId: string | null;
+    items: RetrospectiveItem[];
+    createdAt: string;
+    updatedAt: string;
+  },
+  applications: Awaited<ReturnType<typeof listApplications>>['cards'],
+  stages: KanbanStage[],
+  summaries: RetrospectiveSummary[]
+): RetrospectiveDetail | null {
+  const application = applications.find((card) => card.id === payload.applicationId);
+
+  if (!application) {
+    return null;
+  }
+
+  const summary = summaries.find((entry) => entry.id === payload.retrospectiveId);
+  const stage = payload.stageId
+    ? stages.find((entry) => entry.id === payload.stageId)
+    : null;
+
+  return {
+    id: payload.retrospectiveId,
+    applicationId: payload.applicationId,
+    stageId: payload.stageId,
+    itemCount: payload.items.length,
+    items: payload.items,
+    createdAt: payload.createdAt,
+    updatedAt: payload.updatedAt,
+    company: application.company,
+    position: application.position,
+    stageName: stage?.name ?? summary?.stageName ?? OVERALL_STAGE_NAME,
+    stageColor: stage?.color ?? summary?.stageColor ?? OVERALL_STAGE_COLOR,
+    isOverall: !payload.stageId,
+  };
+}
+
+function areItemsEqual(left: RetrospectiveItem, right: RetrospectiveItem) {
+  return left.question === right.question && left.answer === right.answer;
 }
 
 export default function RetroView() {
-  const [retros, setRetros] = useState<Retrospective[]>(dummyRetros);
+  const queryClient = useQueryClient();
   const [activeTab, setActiveTab] = useState<FilterTab>('전체');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showWriteModal, setShowWriteModal] = useState(false);
-  const [editingRetro, setEditingRetro] = useState<Retrospective | undefined>(undefined);
+  const [editingRetroId, setEditingRetroId] = useState<string | null>(null);
+
+  const { data: boardData } = useQuery({
+    queryKey: applicationKeys.board(),
+    queryFn: () => listApplications(),
+  });
+
+  const { data: stages = [] } = useQuery({
+    queryKey: stageKeys.all,
+    queryFn: listStages,
+  });
+
+  const { data: templates = [] } = useQuery({
+    queryKey: retrospectiveKeys.templates,
+    queryFn: listRetrospectiveTemplates,
+  });
+
+  const applications = boardData?.cards ?? [];
+
+  const { data: retrospectiveSummaries = [], isLoading } = useQuery({
+    queryKey: [...retrospectiveKeys.all, 'aggregated', applications.map((app) => app.id)],
+    queryFn: async () => {
+      const retrospectives = await Promise.all(
+        applications.map((application) =>
+          listApplicationRetrospectives(application.id).then((entries) =>
+            entries.map((entry) => mapSummaryWithContext(entry, applications, stages))
+          )
+        )
+      );
+
+      return retrospectives
+        .flat()
+        .filter((entry): entry is RetrospectiveSummary => entry !== null)
+        .sort(
+          (left: RetrospectiveSummary, right: RetrospectiveSummary) =>
+            new Date(right.updatedAt).getTime() - new Date(left.updatedAt).getTime()
+        );
+    },
+    enabled: applications.length > 0 && stages.length > 0,
+  });
+
+  const { data: selectedRetroDetail } = useQuery({
+    queryKey: selectedId ? retrospectiveKeys.detail(selectedId) : ['retrospectives', 'detail', 'idle'],
+    queryFn: async () => {
+      const detail = await getRetrospective(selectedId!);
+      return mapDetailWithContext(detail, applications, stages, retrospectiveSummaries);
+    },
+    enabled: Boolean(selectedId) && applications.length > 0 && stages.length > 0,
+  });
+
+  const { data: editingRetroDetail } = useQuery({
+    queryKey: editingRetroId
+      ? retrospectiveKeys.detail(editingRetroId)
+      : ['retrospectives', 'editing', 'idle'],
+    queryFn: async () => {
+      const detail = await getRetrospective(editingRetroId!);
+      return mapDetailWithContext(detail, applications, stages, retrospectiveSummaries);
+    },
+    enabled: Boolean(editingRetroId) && applications.length > 0 && stages.length > 0,
+  });
+
+  const saveMutation = useMutation({
+    mutationFn: async ({
+      form,
+      retrospectiveId,
+    }: {
+      form: RetrospectiveEditorForm;
+      retrospectiveId?: string;
+    }) => {
+      if (!retrospectiveId) {
+        const created = await createApplicationRetrospective(form.applicationId, {
+          stageId: form.stageId || null,
+        });
+
+        let items = created.items;
+
+        for (const item of form.items) {
+          const added = await addRetrospectiveItem(created.id, {
+            question: item.question,
+            answer: item.answer,
+          });
+          items = added.items;
+        }
+
+        return {
+          retrospectiveId: created.id,
+          applicationId: created.applicationId,
+          stageId: created.stageId,
+          items,
+          createdAt: created.createdAt,
+          updatedAt: new Date().toISOString(),
+        };
+      }
+
+      const current = await getRetrospective(retrospectiveId);
+      const desiredItems = form.items;
+      let items = current.items;
+      const overlap = Math.min(current.items.length, desiredItems.length);
+
+      for (let index = current.items.length - 1; index >= desiredItems.length; index -= 1) {
+        const deleted = await deleteRetrospectiveItem(retrospectiveId, index);
+        items = deleted.items;
+      }
+
+      for (let index = 0; index < overlap; index += 1) {
+        if (!areItemsEqual(current.items[index], desiredItems[index])) {
+          const updated = await updateRetrospectiveItem(
+            retrospectiveId,
+            index,
+            desiredItems[index]
+          );
+          items = updated.items;
+        }
+      }
+
+      for (let index = current.items.length; index < desiredItems.length; index += 1) {
+        const added = await addRetrospectiveItem(retrospectiveId, desiredItems[index]);
+        items = added.items;
+      }
+
+      return {
+        retrospectiveId,
+        applicationId: current.applicationId,
+        stageId: current.stageId,
+        items,
+        createdAt: current.createdAt,
+        updatedAt: new Date().toISOString(),
+      };
+    },
+    onSuccess: async ({
+      retrospectiveId,
+      applicationId,
+      stageId,
+      items,
+      createdAt,
+      updatedAt,
+    }) => {
+      const nextDetail = buildRetrospectiveDetail(
+        {
+          retrospectiveId,
+          applicationId,
+          stageId,
+          items,
+          createdAt,
+          updatedAt,
+        },
+        applications,
+        stages,
+        retrospectiveSummaries
+      );
+
+      if (nextDetail) {
+        queryClient.setQueryData(retrospectiveKeys.detail(retrospectiveId), nextDetail);
+      }
+
+      await queryClient.invalidateQueries({ queryKey: retrospectiveKeys.all });
+      setSelectedId(retrospectiveId);
+      setEditingRetroId(null);
+      setShowWriteModal(false);
+    },
+    onError: (error) => {
+      window.alert(
+        getApiErrorMessage(error, '회고 저장 중 오류가 발생했습니다.')
+      );
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deleteRetrospective,
+    onSuccess: async (_, retrospectiveId) => {
+      await queryClient.invalidateQueries({ queryKey: retrospectiveKeys.all });
+      await queryClient.removeQueries({ queryKey: retrospectiveKeys.detail(retrospectiveId) });
+      if (selectedId === retrospectiveId) {
+        setSelectedId(null);
+      }
+      if (editingRetroId === retrospectiveId) {
+        setEditingRetroId(null);
+        setShowWriteModal(false);
+      }
+    },
+    onError: (error) => {
+      window.alert(
+        getApiErrorMessage(error, '회고 삭제 중 오류가 발생했습니다.')
+      );
+    },
+  });
+
+  const applyTemplateMutation = useMutation({
+    mutationFn: ({
+      retrospectiveId,
+      templateId,
+    }: {
+      retrospectiveId: string;
+      templateId: string;
+    }) => applyRetrospectiveTemplate(retrospectiveId, templateId),
+    onSuccess: async (_, variables) => {
+      await queryClient.invalidateQueries({ queryKey: retrospectiveKeys.all });
+      await queryClient.invalidateQueries({
+        queryKey: retrospectiveKeys.detail(variables.retrospectiveId),
+      });
+    },
+  });
+
+  const stageTabs = useMemo(() => {
+    const dynamicTabs = Array.from(
+      new Set(retrospectiveSummaries.map((retro) => retro.stageName))
+    );
+
+    return ['전체', ...dynamicTabs] as FilterTab[];
+  }, [retrospectiveSummaries]);
 
   const filteredRetros = useMemo(() => {
-    return retros.filter((r) => {
-      const matchStage = activeTab === '전체' || r.stage === activeTab;
-      const q = searchQuery.toLowerCase();
+    const lowerQuery = searchQuery.trim().toLowerCase();
+
+    return retrospectiveSummaries.filter((retro) => {
+      const matchStage =
+        activeTab === '전체' || retro.stageName === activeTab;
       const matchSearch =
-        !q ||
-        r.company.toLowerCase().includes(q) ||
-        r.position.toLowerCase().includes(q) ||
-        r.question.toLowerCase().includes(q) ||
-        r.answer.toLowerCase().includes(q);
+        !lowerQuery ||
+        retro.company.toLowerCase().includes(lowerQuery) ||
+        retro.position.toLowerCase().includes(lowerQuery);
+
       return matchStage && matchSearch;
     });
-  }, [retros, activeTab, searchQuery]);
+  }, [activeTab, retrospectiveSummaries, searchQuery]);
 
-  const selectedRetro = retros.find((r) => r.id === selectedId) ?? null;
+  const selectedDisplayRetro = selectedRetroDetail ?? null;
 
-  function handleSave(data: Omit<Retrospective, 'id'>) {
-    if (editingRetro) {
-      setRetros((prev) =>
-        prev.map((r) => (r.id === editingRetro.id ? { ...data, id: editingRetro.id } : r))
-      );
-    } else {
-      const newRetro = { ...data, id: String(Date.now()) };
-      setRetros((prev) => [newRetro, ...prev]);
-      setSelectedId(newRetro.id);
+  async function handleSave(form: RetrospectiveEditorForm, retrospectiveId?: string) {
+    const normalizedItems = form.items
+      .map((item) => ({
+        question: item.question.trim(),
+        answer: item.answer.trim(),
+      }))
+      .filter((item) => item.question);
+
+    await saveMutation.mutateAsync({
+      form: {
+        ...form,
+        items: normalizedItems,
+      },
+      retrospectiveId,
+    });
+  }
+
+  async function handleDelete(id: string) {
+    const target = retrospectiveSummaries.find((retro) => retro.id === id);
+
+    if (!target) {
+      return;
     }
-    setEditingRetro(undefined);
+
+    const shouldDelete = window.confirm(`"${target.company}" 회고를 삭제할까요?`);
+
+    if (!shouldDelete) {
+      return;
+    }
+
+    await deleteMutation.mutateAsync(id);
   }
 
-  function handleDelete(id: string) {
-    setRetros((prev) => prev.filter((r) => r.id !== id));
-    if (selectedId === id) setSelectedId(null);
-  }
-
-  function openEdit(retro: Retrospective) {
-    setEditingRetro(retro);
+  function openEdit(retro: RetrospectiveDetail) {
+    setEditingRetroId(retro.id);
     setShowWriteModal(true);
   }
 
   function openWrite() {
-    setEditingRetro(undefined);
+    setEditingRetroId(null);
     setShowWriteModal(true);
+  }
+
+  async function handleGenerateAiQuestions(applicationId: string, stageId?: string) {
+    try {
+      return await generateAiRetrospectiveQuestions({
+        applicationId,
+        stageId: stageId || undefined,
+      });
+    } catch (error) {
+      window.alert(
+        getApiErrorMessage(error, 'AI 질문 생성 중 오류가 발생했습니다.')
+      );
+      throw error;
+    }
+  }
+
+  async function handleApplyTemplate(retrospectiveId: string, templateId: string) {
+    try {
+      const detail = await applyTemplateMutation.mutateAsync({
+        retrospectiveId,
+        templateId,
+      });
+
+      return detail.items;
+    } catch (error) {
+      window.alert(
+        getApiErrorMessage(error, '템플릿 적용 중 오류가 발생했습니다.')
+      );
+      throw error;
+    }
   }
 
   return (
     <div className={styles.wrapper}>
-      {/* ── Page Header ── */}
       <div className={styles.pageHeader}>
         <div>
           <h1 className={styles.pageTitle}>회고</h1>
-          <p className={styles.pageSubtitle}>면접과 과제에 대한 회고를 기록하세요</p>
+          <p className={styles.pageSubtitle}>지원 카드별 질문과 답변을 회고로 남겨보세요</p>
         </div>
         <button className={styles.writeBtn} onClick={openWrite}>
           <Plus size={15} />
@@ -82,13 +485,10 @@ export default function RetroView() {
         </button>
       </div>
 
-      {/* ── Body ── */}
       <div className={styles.body}>
-        {/* Left: List Panel */}
         <div className={styles.listPanel}>
-          {/* Filter Tabs */}
           <div className={styles.tabs}>
-            {TABS.map((tab) => (
+            {stageTabs.map((tab) => (
               <button
                 key={tab}
                 className={`${styles.tab} ${activeTab === tab ? styles.tabActive : ''}`}
@@ -99,26 +499,26 @@ export default function RetroView() {
             ))}
           </div>
 
-          {/* Search */}
           <div className={styles.searchWrap}>
             <Search size={15} className={styles.searchIcon} />
             <input
               className={styles.searchInput}
               type="text"
-              placeholder="회사명, 포지션, 내용 검색..."
+              placeholder="회사명 또는 포지션 검색..."
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(event) => setSearchQuery(event.target.value)}
             />
           </div>
 
-          {/* List */}
           <div className={styles.list}>
-            {filteredRetros.length === 0 ? (
+            {isLoading ? (
+              <p className={styles.emptyList}>회고를 불러오는 중입니다.</p>
+            ) : filteredRetros.length === 0 ? (
               <p className={styles.emptyList}>검색 결과가 없습니다.</p>
             ) : (
               filteredRetros.map((retro) => {
-                const stageColor = STAGE_COLORS[retro.stage];
                 const isSelected = selectedId === retro.id;
+
                 return (
                   <button
                     key={retro.id}
@@ -129,16 +529,17 @@ export default function RetroView() {
                       <span className={styles.listCompany}>{retro.company}</span>
                       <span
                         className={styles.listStageBadge}
-                        style={{ background: stageColor.bg, color: stageColor.text }}
+                        style={{
+                          background: `${retro.stageColor}22`,
+                          color: retro.stageColor,
+                        }}
                       >
-                        {retro.stage}
+                        {retro.stageName}
                       </span>
                     </div>
                     <p className={styles.listPosition}>{retro.position}</p>
-                    <p className={styles.listDate}>{formatDateShort(retro.date)}</p>
-                    {retro.question && (
-                      <p className={styles.listPreview}>{retro.question}</p>
-                    )}
+                    <p className={styles.listDate}>{formatDateShort(retro.updatedAt)}</p>
+                    <p className={styles.listPreview}>문항 {retro.itemCount}개</p>
                   </button>
                 );
               })
@@ -146,22 +547,33 @@ export default function RetroView() {
           </div>
         </div>
 
-        {/* Right: Detail Panel */}
         <div className={styles.detailPanel}>
           <RetroDetail
-            retro={selectedRetro}
+            retro={selectedDisplayRetro}
             onEdit={openEdit}
-            onDelete={handleDelete}
+            onDelete={(id) => void handleDelete(id)}
           />
         </div>
       </div>
 
-      {/* ── Write Modal ── */}
       {showWriteModal && (
         <WriteRetroModal
-          initial={editingRetro}
-          onClose={() => { setShowWriteModal(false); setEditingRetro(undefined); }}
+          initial={editingRetroId ? (editingRetroDetail ?? undefined) : undefined}
+          applications={applications.map((application) => ({
+            id: application.id,
+            company: application.company,
+            position: application.position,
+          }))}
+          stages={stages}
+          templates={templates}
+          isSaving={saveMutation.isPending}
+          onClose={() => {
+            setShowWriteModal(false);
+            setEditingRetroId(null);
+          }}
           onSave={handleSave}
+          onApplyTemplate={handleApplyTemplate}
+          onGenerateAiQuestions={handleGenerateAiQuestions}
         />
       )}
     </div>

@@ -1,41 +1,37 @@
-export type RetroStage = '서류' | '코테' | '면접' | '최종';
-
-export interface RetroSection {
-  id: string;
-  title: string;
-  content: string;
-}
-
-export interface Retrospective {
-  id: string;
-  company: string;
-  position: string;
-  stage: RetroStage;
-  date: string; // YYYY-MM-DD
+export interface RetrospectiveItem {
   question: string;
   answer: string;
-  reflection: string;
-  feeling: string;
-  extraSections: RetroSection[];
 }
 
-export interface NewRetroForm {
+export interface RetrospectiveSummary {
+  id: string;
+  applicationId: string;
+  stageId: string | null;
+  itemCount: number;
+  createdAt: string;
+  updatedAt: string;
   company: string;
   position: string;
-  stage: RetroStage;
-  date: string;
-  question: string;
-  answer: string;
-  reflection: string;
-  feeling: string;
-  extraSections: RetroSection[];
+  stageName: string;
+  stageColor: string;
+  isOverall: boolean;
 }
 
-export const STAGE_OPTIONS: RetroStage[] = ['서류', '코테', '면접', '최종'];
+export interface RetrospectiveDetail extends RetrospectiveSummary {
+  items: RetrospectiveItem[];
+}
 
-export const STAGE_COLORS: Record<RetroStage, { bg: string; text: string }> = {
-  서류: { bg: '#dbeafe', text: '#2563eb' },
-  코테: { bg: '#ede9fe', text: '#7c3aed' },
-  면접: { bg: '#ffedd5', text: '#ea580c' },
-  최종: { bg: '#dcfce7', text: '#16a34a' },
-};
+export interface RetrospectiveTemplate {
+  id: string;
+  name: string;
+  questions: string[];
+}
+
+export interface RetrospectiveEditorForm {
+  applicationId: string;
+  stageId: string;
+  items: RetrospectiveItem[];
+}
+
+export const OVERALL_STAGE_NAME = '종합';
+export const OVERALL_STAGE_COLOR = '#64748b';

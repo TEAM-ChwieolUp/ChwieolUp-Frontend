@@ -63,6 +63,10 @@ async function requestRefreshToken() {
     throw new Error('Refresh response did not include an access token.');
   }
 
+  if (process.env.NODE_ENV !== 'production') {
+    console.log('[auth] accessToken', session.accessToken);
+  }
+
   setAuthSession(session);
   return session;
 }

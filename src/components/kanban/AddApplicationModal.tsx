@@ -3,11 +3,9 @@
 import { useMemo, useState } from 'react';
 import { CalendarDays, Tag as TagIcon, Trash2, X } from 'lucide-react';
 import {
-  FINAL_STAGE_ID,
   KanbanCard,
   KanbanFormValues,
   KanbanStage,
-  TAG_SUGGESTIONS,
   Tag,
 } from './types';
 import styles from './AddApplicationModal.module.scss';
@@ -16,9 +14,12 @@ interface AddApplicationModalProps {
   card?: KanbanCard | null;
   defaultStageId?: string;
   stages: KanbanStage[];
+  tagOptions: Tag[];
   onClose: () => void;
-  onSave: (card: Omit<KanbanCard, 'id'>, existingId?: string) => void;
-  onDelete?: (cardId: string) => void;
+  onCreateTag: (name: string) => Promise<Tag>;
+  onSave: (card: Omit<KanbanCard, 'id'>, existingId?: string) => Promise<void>;
+  onDelete?: (cardId: string) => Promise<void>;
+  isSaving?: boolean;
 }
 
 const EMPTY_FORM: KanbanFormValues = {
@@ -35,7 +36,8 @@ const EMPTY_FORM: KanbanFormValues = {
 
 function toInputDate(value?: string): string {
   if (!value) return '';
-  if (value.includes('-')) return value;
+  if (value.includes('T')) return value.slice(0, 10);
+  if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
 
   const [month, day] = value.split('/').map(Number);
   if (!month || !day) return '';
@@ -59,9 +61,12 @@ export default function AddApplicationModal({
   card,
   defaultStageId,
   stages,
+  tagOptions,
   onClose,
+  onCreateTag,
   onSave,
   onDelete,
+  isSaving = false,
 }: AddApplicationModalProps) {
   const isEditMode = Boolean(card);
 
@@ -71,7 +76,7 @@ export default function AddApplicationModal({
       return {
         company: card.company,
         position: card.position,
-        appliedDate: toInputDate(card.appliedDate),
+        appliedDate: toInputDate(card.appliedAt ?? card.appliedDate),
         stageId: card.stageId,
         tags: card.tags,
         nextAction: card.nextAction ?? '',
@@ -84,13 +89,18 @@ export default function AddApplicationModal({
 
     return {
       ...EMPTY_FORM,
-      stageId: defaultStageId ?? stageOptions[0]?.id ?? FINAL_STAGE_ID,
+      stageId: defaultStageId ?? stageOptions[0]?.id ?? '',
     };
   }, [card, defaultStageId, stageOptions]);
   const [form, setForm] = useState<KanbanFormValues>(initialForm);
   const [tagInput, setTagInput] = useState('');
   const selectedStage = stageOptions.find((stage) => stage.id === form.stageId);
-  const isFinalStage = form.stageId === FINAL_STAGE_ID;
+  const fixedStageResult =
+    selectedStage?.kind === 'passed'
+      ? '합격'
+      : selectedStage?.kind === 'rejected'
+        ? '불합격'
+        : null;
 
   function handleChange<K extends keyof KanbanFormValues>(
     key: K,
@@ -108,34 +118,45 @@ export default function AddApplicationModal({
     }));
   }
 
-  function addCustomTag() {
+  async function handleCreateTag() {
     const nextTag = tagInput.trim();
     if (!nextTag) return;
 
-    setForm((prev) => ({
-      ...prev,
-      tags: prev.tags.includes(nextTag) ? prev.tags : [...prev.tags, nextTag],
-    }));
-    setTagInput('');
+    try {
+      const createdTag = await onCreateTag(nextTag);
+      setForm((prev) => ({
+        ...prev,
+        tags: prev.tags.includes(createdTag) ? prev.tags : [...prev.tags, createdTag],
+      }));
+      setTagInput('');
+    } catch (error) {
+      window.alert(
+        error instanceof Error ? error.message : '태그 생성 중 오류가 발생했습니다.',
+      );
+    }
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!form.company.trim() || !form.position.trim() || !form.appliedDate) return;
 
-    onSave({
-      company: form.company.trim(),
-      position: form.position.trim(),
-      appliedDate: formatDate(form.appliedDate),
-      stageId: form.stageId,
-      tags: form.tags,
-      nextAction: form.nextAction.trim() || undefined,
-      noResponseDays: form.noResponseDays
-        ? Number(form.noResponseDays)
-        : undefined,
-      finalResult: isFinalStage ? form.finalResult : null,
-      memo: form.memo.trim() || undefined,
-    }, card?.id);
+    await onSave(
+      {
+        company: form.company.trim(),
+        position: form.position.trim(),
+        appliedDate: formatDate(form.appliedDate),
+        appliedAt: form.appliedDate,
+        stageId: form.stageId,
+        tags: form.tags,
+        nextAction: form.nextAction.trim() || undefined,
+        noResponseDays: form.noResponseDays
+          ? Number(form.noResponseDays)
+          : undefined,
+        finalResult: fixedStageResult ?? null,
+        memo: form.memo.trim() || undefined,
+      },
+      card?.id
+    );
     onClose();
   }
 
@@ -159,7 +180,7 @@ export default function AddApplicationModal({
                 : '지원 정보를 입력해 보드에 새로운 카드를 추가하세요.'}
             </p>
           </div>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="닫기">
+          <button className={styles.closeBtn} onClick={onClose} aria-label="닫기" disabled={isSaving}>
             <X size={18} />
           </button>
         </div>
@@ -275,35 +296,21 @@ export default function AddApplicationModal({
           </div>
           </section>
 
-          {isFinalStage && (
+          {fixedStageResult && (
             <section className={styles.section}>
               <div className={styles.sectionHeader}>
                 <h3 className={styles.sectionTitle}>최종 결과</h3>
               </div>
               <div className={styles.field}>
-              <div className={styles.resultButtons}>
-                {(['합격', '불합격'] as const).map((result) => (
+                <div className={styles.resultButtons}>
                   <button
-                    key={result}
                     type="button"
-                    className={`${styles.resultBtn} ${
-                      form.finalResult === result ? styles.resultBtnActive : ''
-                    }`}
-                    onClick={() => handleChange('finalResult', result)}
+                    className={`${styles.resultBtn} ${styles.resultBtnActive}`}
+                    disabled
                   >
-                    {result}
+                    {fixedStageResult}
                   </button>
-                ))}
-                <button
-                  type="button"
-                  className={`${styles.resultBtn} ${
-                    form.finalResult === null ? styles.resultBtnActive : ''
-                  }`}
-                  onClick={() => handleChange('finalResult', null)}
-                >
-                  미정
-                </button>
-              </div>
+                </div>
               </div>
             </section>
           )}
@@ -314,7 +321,7 @@ export default function AddApplicationModal({
             </div>
             <div className={styles.field}>
             <div className={styles.tagGrid}>
-              {TAG_SUGGESTIONS.map((tag) => (
+              {tagOptions.map((tag) => (
                 <button
                   key={tag}
                   type="button"
@@ -337,14 +344,15 @@ export default function AddApplicationModal({
                 onKeyDown={(e) => {
                   if (e.key === 'Enter') {
                     e.preventDefault();
-                    addCustomTag();
+                    void handleCreateTag();
                   }
                 }}
               />
               <button
                 type="button"
                 className={styles.addTagBtn}
-                onClick={addCustomTag}
+                onClick={() => void handleCreateTag()}
+                disabled={isSaving}
               >
                 태그 추가
               </button>
@@ -384,10 +392,11 @@ export default function AddApplicationModal({
               <button
                 type="button"
                 className={styles.deleteBtn}
-                onClick={() => {
-                  onDelete(card.id);
+                onClick={async () => {
+                  await onDelete(card.id);
                   onClose();
                 }}
+                disabled={isSaving}
               >
                 <Trash2 size={16} />
                 카드 삭제
@@ -395,10 +404,10 @@ export default function AddApplicationModal({
             )}
 
             <div className={styles.actionGroup}>
-              <button type="button" className={styles.cancelBtn} onClick={onClose}>
+              <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={isSaving}>
                 닫기
               </button>
-              <button type="submit" className={styles.saveBtn}>
+              <button type="submit" className={styles.saveBtn} disabled={isSaving}>
                 {isEditMode ? '변경 저장' : '카드 추가'}
               </button>
             </div>

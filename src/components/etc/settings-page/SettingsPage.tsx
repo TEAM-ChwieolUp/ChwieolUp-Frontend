@@ -12,7 +12,11 @@ import {
   Sparkles,
   UserRound,
 } from 'lucide-react';
+import { useQuery } from '@tanstack/react-query';
 import { useId, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { getMyProfile, userProfileKeys } from '@/features/user/api/profile';
+import { ApiError } from '@/lib/api';
 import styles from './SettingsPage.module.scss';
 
 const categories = [
@@ -42,7 +46,9 @@ type CategoryId = (typeof categories)[number]['id'];
 
 export default function SettingsPage() {
   const sliderId = useId();
-  const [activeCategory, setActiveCategory] = useState<CategoryId>('profile');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [gmailEnabled, setGmailEnabled] = useState(true);
   const [outlookEnabled, setOutlookEnabled] = useState(false);
   const [sensitivity, setSensitivity] = useState(75);
@@ -50,88 +56,108 @@ export default function SettingsPage() {
   const [deadlineAlerts, setDeadlineAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
 
+  const {
+    data: profile,
+    isLoading: isProfileLoading,
+    isError: isProfileError,
+    error: profileError,
+  } = useQuery({
+    queryKey: userProfileKeys.me,
+    queryFn: getMyProfile,
+  });
+
+  const profileName = profile?.name ?? '사용자';
+  const profileInitial = profileName.trim().slice(0, 1).toUpperCase() || '?';
+  const profileProviderLabel =
+    profile?.oauth2Provider === 'KAKAO' ? 'Kakao' : 'Google';
+  const requestedTab = searchParams.get('tab');
+  const activeCategory: CategoryId =
+    requestedTab && categories.some((category) => category.id === requestedTab)
+      ? (requestedTab as CategoryId)
+      : 'profile';
+
+  function getProfileErrorMessage() {
+    if (profileError instanceof ApiError) {
+      return profileError.message;
+    }
+
+    if (profileError instanceof Error) {
+      return profileError.message;
+    }
+
+    return '프로필 정보를 불러오지 못했습니다.';
+  }
+
+  function handleCategoryChange(categoryId: CategoryId) {
+    router.replace(`${pathname}?tab=${categoryId}`, { scroll: false });
+  }
+
   const renderProfileContent = () => (
     <>
       <section className={styles.sectionCard}>
         <header className={styles.sectionHeader}>
           <h2>프로필 설정</h2>
           <p>
-            지원 현황 분석과 추천 품질을 높이기 위해 기본 프로필 정보를 관리하세요.
+            OAuth 로그인 기반 계정이라 프로필 정보는 현재 읽기 전용으로 제공됩니다.
           </p>
         </header>
 
         <div className={styles.profileHero}>
           <div className={styles.profileAvatar} aria-hidden='true'>
-            김
+            {profile?.profileImageUrl ? (
+              <div
+                className={styles.profileAvatarImage}
+                style={{ backgroundImage: `url(${profile.profileImageUrl})` }}
+              />
+            ) : (
+              profileInitial
+            )}
           </div>
 
           <div className={styles.profileHeroCopy}>
-            <strong>김철수</strong>
-            <span>Product Designer를 목표로 취업 준비 중</span>
+            <strong>{isProfileLoading ? '불러오는 중' : profileName}</strong>
+            <span>
+              {isProfileLoading
+                ? '프로필 정보를 확인하고 있습니다.'
+                : `${profileProviderLabel} 계정으로 연결된 프로필입니다.`}
+            </span>
           </div>
         </div>
 
-        <div className={styles.fieldGrid}>
-          <label className={styles.field}>
-            <span>이름</span>
-            <input type='text' defaultValue='김철수' />
-          </label>
+        {isProfileError ? (
+          <div className={styles.profileNotice}>
+            <p>{getProfileErrorMessage()}</p>
+          </div>
+        ) : (
+          <div className={styles.fieldGrid}>
+            <label className={styles.field}>
+              <span>이름</span>
+              <input
+                type='text'
+                value={isProfileLoading ? '불러오는 중...' : profile?.name ?? ''}
+                readOnly
+                disabled
+              />
+            </label>
 
-          <label className={styles.field}>
-            <span>이메일</span>
-            <input
-              type='email'
-              defaultValue='career_architect@chwieolup.ai'
-            />
-          </label>
+            <label className={styles.field}>
+              <span>이메일</span>
+              <input
+                type='email'
+                value={isProfileLoading ? '불러오는 중...' : profile?.email ?? ''}
+                readOnly
+                disabled
+              />
+            </label>
+          </div>
+        )}
 
-          <label className={styles.field}>
-            <span>희망 직무</span>
-            <input type='text' defaultValue='Product Designer' />
-          </label>
-
-          <label className={styles.field}>
-            <span>경력 단계</span>
-            <select defaultValue='junior'>
-              <option value='intern'>인턴 / 신입</option>
-              <option value='junior'>주니어</option>
-              <option value='mid'>미들</option>
-              <option value='senior'>시니어</option>
-            </select>
-          </label>
-
-          <label className={`${styles.field} ${styles.fieldFull}`}>
-            <span>포트폴리오 링크</span>
-            <input
-              type='url'
-              defaultValue='https://portfolio.chwieolup.ai/minwoo'
-            />
-            <small>
-              대표 포트폴리오 주소를 입력하면 지원 기록과 함께 참고할 수 있습니다.
-            </small>
-          </label>
-
-          <label className={`${styles.field} ${styles.fieldFull}`}>
-            <span>검색 키워드</span>
-            <input
-              type='text'
-              defaultValue='Product Designer, UX, BX, 브랜딩'
-            />
-            <small>
-              선호 직무나 관심 키워드를 쉼표로 구분해서 입력하세요.
-            </small>
-          </label>
+        <div className={styles.profileNotice}>
+          <p>
+            이름, 이메일, 프로필 사진은 {profileProviderLabel} OAuth 계정 기준으로 동기화됩니다. 변경이 필요하면 해당 소셜 계정에서 수정해야 합니다.
+          </p>
         </div>
       </section>
-
-      <div className={styles.actionBar}>
-        <button type='button' className={styles.ghostButton}>
-          초기화
-        </button>
-        <button type='button' className={styles.primaryButton}>
-          프로필 저장하기
-        </button>
-      </div>
     </>
   );
 
@@ -491,7 +517,7 @@ export default function SettingsPage() {
                   className={`${styles.categoryButton} ${
                     activeCategory === category.id ? styles.active : ''
                   }`}
-                  onClick={() => setActiveCategory(category.id)}
+                  onClick={() => handleCategoryChange(category.id)}
                 >
                   <Icon aria-hidden='true' />
                   <span>{category.label}</span>

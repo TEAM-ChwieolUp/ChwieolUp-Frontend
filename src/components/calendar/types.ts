@@ -1,31 +1,45 @@
-export type EventCategory = '채용공고' | '내 프로세스' | '개인 일정';
-export type EventType = '마감' | '면접' | '코딩테스트' | '스터디' | '기타';
+export type ScheduleCategory = 'JOB_POSTING' | 'APPLICATION_PROCESS' | 'PERSONAL';
 
 export interface CalendarEvent {
   id: string;
+  applicationId: string | null;
+  category: ScheduleCategory;
   title: string;
-  date: string; // YYYY-MM-DD
-  time?: string;
-  allDay?: boolean;
-  category: EventCategory;
-  type: EventType;
-  company?: string;
-  location?: string;
-  description?: string;
+  startAt: string;
+  endAt: string | null;
+  applicationName?: string;
 }
 
-export interface NewEventForm {
+export interface CalendarApplicationOption {
+  id: string;
+  companyName: string;
+  position: string;
+}
+
+export interface EventFormValues {
   title: string;
   date: string;
-  time: string;
+  startTime: string;
+  endTime: string;
   allDay: boolean;
-  type: EventType;
-  category: EventCategory;
-  company: string;
-  location: string;
-  description: string;
+  category: ScheduleCategory;
+  applicationId: string;
 }
 
-export const EVENT_TYPE_OPTIONS: EventType[] = ['마감', '면접', '코딩테스트', '스터디', '기타'];
-export const CATEGORY_OPTIONS: EventCategory[] = ['채용공고', '내 프로세스', '개인 일정'];
-export const DUMMY_COMPANIES = ['라인', '토스페이먼츠', '카카오', '네이버', '쿠팡', '배달의민족'];
+export const CATEGORY_OPTIONS: ScheduleCategory[] = [
+  'JOB_POSTING',
+  'APPLICATION_PROCESS',
+  'PERSONAL',
+];
+
+export const CATEGORY_LABELS: Record<ScheduleCategory, string> = {
+  JOB_POSTING: '채용공고',
+  APPLICATION_PROCESS: '내 프로세스',
+  PERSONAL: '개인 일정',
+};
+
+export const CATEGORY_DESCRIPTIONS: Record<ScheduleCategory, string> = {
+  JOB_POSTING: '채용공고 접수 시작, 마감, 설명회 일정을 관리합니다.',
+  APPLICATION_PROCESS: '면접, 코딩테스트, 발표 일정 등 채용 프로세스를 관리합니다.',
+  PERSONAL: '스터디, 회고, 개인 학습 일정 등을 관리합니다.',
+};

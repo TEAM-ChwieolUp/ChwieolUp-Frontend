@@ -1,83 +1,215 @@
 'use client';
 
-import { useState } from 'react';
-import { X, Plus } from 'lucide-react';
+import { useEffect, useMemo, useState } from 'react';
+import { Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { KanbanStage } from '@/components/kanban/types';
 import {
-  Retrospective,
-  NewRetroForm,
-  STAGE_OPTIONS,
-  STAGE_COLORS,
-  RetroStage,
-  RetroSection,
+  RetrospectiveDetail,
+  RetrospectiveEditorForm,
+  RetrospectiveItem,
+  RetrospectiveTemplate,
 } from './types';
 import styles from './WriteRetroModal.module.scss';
 
+interface ApplicationOption {
+  id: string;
+  company: string;
+  position: string;
+}
+
 interface WriteRetroModalProps {
-  initial?: Retrospective;
+  initial?: RetrospectiveDetail;
+  applications: ApplicationOption[];
+  stages: KanbanStage[];
+  templates: RetrospectiveTemplate[];
+  isSaving?: boolean;
   onClose: () => void;
-  onSave: (retro: Omit<Retrospective, 'id'>) => void;
+  onSave: (form: RetrospectiveEditorForm, retrospectiveId?: string) => Promise<void>;
+  onApplyTemplate?: (retrospectiveId: string, templateId: string) => Promise<RetrospectiveItem[]>;
+  onGenerateAiQuestions: (applicationId: string, stageId?: string) => Promise<string[]>;
 }
 
-function todayStr() {
-  return new Date().toISOString().slice(0, 10);
+function createEmptyItem(): RetrospectiveItem {
+  return {
+    question: '',
+    answer: '',
+  };
 }
 
-export default function WriteRetroModal({ initial, onClose, onSave }: WriteRetroModalProps) {
-  const [form, setForm] = useState<NewRetroForm>({
-    company: initial?.company ?? '',
-    position: initial?.position ?? '',
-    stage: initial?.stage ?? '서류',
-    date: initial?.date ?? todayStr(),
-    question: initial?.question ?? '',
-    answer: initial?.answer ?? '',
-    reflection: initial?.reflection ?? '',
-    feeling: initial?.feeling ?? '',
-    extraSections: initial?.extraSections ?? [],
-  });
-  const [newSectionTitle, setNewSectionTitle] = useState('');
+function createFormState(
+  initial: RetrospectiveDetail | undefined,
+  applications: ApplicationOption[]
+): RetrospectiveEditorForm {
+  return {
+    applicationId: initial?.applicationId ?? applications[0]?.id ?? '',
+    stageId: initial?.stageId ?? '',
+    items: initial?.items.length ? initial.items : [createEmptyItem()],
+  };
+}
 
-  function handleChange<K extends keyof NewRetroForm>(key: K, value: NewRetroForm[K]) {
+export default function WriteRetroModal({
+  initial,
+  applications,
+  stages,
+  templates,
+  isSaving = false,
+  onClose,
+  onSave,
+  onApplyTemplate,
+  onGenerateAiQuestions,
+}: WriteRetroModalProps) {
+  const [form, setForm] = useState<RetrospectiveEditorForm>(() =>
+    createFormState(initial, applications)
+  );
+  const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const isEditMode = Boolean(initial);
+  const availableStages = useMemo(
+    () => stages.filter((stage) => stage.kind === 'custom'),
+    [stages]
+  );
+
+  useEffect(() => {
+    setForm(createFormState(initial, applications));
+    setSelectedTemplateId('');
+  }, [applications, initial]);
+
+  function handleChange<K extends keyof RetrospectiveEditorForm>(
+    key: K,
+    value: RetrospectiveEditorForm[K]
+  ) {
     setForm((prev) => ({ ...prev, [key]: value }));
   }
 
-  function addExtraSection() {
-    if (!newSectionTitle.trim()) return;
-    const section: RetroSection = {
-      id: String(Date.now()),
-      title: newSectionTitle.trim(),
-      content: '',
-    };
-    setForm((prev) => ({ ...prev, extraSections: [...prev.extraSections, section] }));
-    setNewSectionTitle('');
-  }
-
-  function updateExtraSection(id: string, content: string) {
+  function updateItem(index: number, patch: Partial<RetrospectiveItem>) {
     setForm((prev) => ({
       ...prev,
-      extraSections: prev.extraSections.map((s) => (s.id === id ? { ...s, content } : s)),
+      items: prev.items.map((item, itemIndex) =>
+        itemIndex === index
+          ? {
+              ...item,
+              ...patch,
+            }
+          : item
+      ),
     }));
   }
 
-  function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    if (!form.company.trim() || !form.position.trim()) return;
-    onSave({ ...form });
-    onClose();
+  function addItem(question = '', answer = '') {
+    setForm((prev) => ({
+      ...prev,
+      items: [...prev.items, { question, answer }],
+    }));
   }
 
-  const stageColor = STAGE_COLORS[form.stage];
+  function removeItem(index: number) {
+    setForm((prev) => ({
+      ...prev,
+      items:
+        prev.items.length === 1
+          ? [createEmptyItem()]
+          : prev.items.filter((_, itemIndex) => itemIndex !== index),
+    }));
+  }
+
+  async function applyTemplateLocally() {
+    if (!selectedTemplateId) {
+      return;
+    }
+
+    const template = templates.find((entry) => entry.id === selectedTemplateId);
+
+    if (!template) {
+      return;
+    }
+
+    if (initial && onApplyTemplate) {
+      const items = await onApplyTemplate(initial.id, selectedTemplateId);
+      setForm((prev) => ({
+        ...prev,
+        items,
+      }));
+      return;
+    }
+
+    setForm((prev) => ({
+      ...prev,
+      items: [
+        ...prev.items.filter((item) => item.question.trim() || item.answer.trim()),
+        ...template.questions.map((question) => ({
+          question,
+          answer: '',
+        })),
+      ],
+    }));
+  }
+
+  async function handleGenerateAiQuestions() {
+    if (!form.applicationId) {
+      window.alert('먼저 지원 카드를 선택해주세요.');
+      return;
+    }
+
+    try {
+      setIsGeneratingQuestions(true);
+      const questions = await onGenerateAiQuestions(
+        form.applicationId,
+        form.stageId || undefined
+      );
+
+      setForm((prev) => ({
+        ...prev,
+        items: [
+          ...prev.items.filter((item) => item.question.trim() || item.answer.trim()),
+          ...questions.map((question) => ({
+            question,
+            answer: '',
+          })),
+        ],
+      }));
+    } finally {
+      setIsGeneratingQuestions(false);
+    }
+  }
+
+  async function handleSubmit(event: React.FormEvent) {
+    event.preventDefault();
+
+    if (!form.applicationId) {
+      return;
+    }
+
+    const normalizedItems = form.items
+      .map((item) => ({
+        question: item.question.trim(),
+        answer: item.answer.trim(),
+      }))
+      .filter((item) => item.question);
+
+    await onSave(
+      {
+        applicationId: form.applicationId,
+        stageId: form.stageId,
+        items: normalizedItems,
+      },
+      initial?.id
+    );
+    onClose();
+  }
 
   return (
     <div
       className={styles.overlay}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      onClick={(event) => {
+        if (event.target === event.currentTarget) onClose();
+      }}
     >
       <div className={styles.modal} role="dialog" aria-modal aria-labelledby="retro-modal-title">
         <div className={styles.modalHeader}>
           <h2 id="retro-modal-title" className={styles.modalTitle}>
-            {initial ? '회고 수정' : '새 회고 작성'}
+            {isEditMode ? '회고 수정' : '새 회고 작성'}
           </h2>
-          <button className={styles.closeBtn} onClick={onClose} aria-label="닫기">
+          <button className={styles.closeBtn} onClick={onClose} aria-label="닫기" disabled={isSaving}>
             <X size={18} />
           </button>
         </div>
@@ -85,142 +217,148 @@ export default function WriteRetroModal({ initial, onClose, onSave }: WriteRetro
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="retro-company">회사명 *</label>
-              <input
-                id="retro-company"
-                className={styles.input}
-                type="text"
-                placeholder="네이버"
-                value={form.company}
-                onChange={(e) => handleChange('company', e.target.value)}
-                required
-              />
+              <label className={styles.label} htmlFor="retro-application">지원 카드</label>
+              <select
+                id="retro-application"
+                className={styles.select}
+                value={form.applicationId}
+                onChange={(event) => handleChange('applicationId', event.target.value)}
+                disabled={isEditMode || isSaving}
+              >
+                <option value="">지원 카드 선택</option>
+                {applications.map((application) => (
+                  <option key={application.id} value={application.id}>
+                    {application.company} · {application.position}
+                  </option>
+                ))}
+              </select>
             </div>
+
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="retro-position">포지션 *</label>
-              <input
-                id="retro-position"
-                className={styles.input}
-                type="text"
-                placeholder="프론트엔드 개발자"
-                value={form.position}
-                onChange={(e) => handleChange('position', e.target.value)}
-                required
-              />
+              <label className={styles.label} htmlFor="retro-stage">단계</label>
+              <select
+                id="retro-stage"
+                className={styles.select}
+                value={form.stageId}
+                onChange={(event) => handleChange('stageId', event.target.value)}
+                disabled={isEditMode || isSaving}
+              >
+                <option value="">종합 회고</option>
+                {availableStages.map((stage) => (
+                  <option key={stage.id} value={stage.id}>
+                    {stage.name}
+                  </option>
+                ))}
+              </select>
             </div>
           </div>
 
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="retro-stage">단계</label>
-              <div className={styles.stageSelectWrap}>
-                <span
-                  className={styles.stageDot}
-                  style={{ background: stageColor.text }}
-                />
+              <label className={styles.label} htmlFor="retro-template">템플릿</label>
+              <div className={styles.addSectionRow}>
                 <select
-                  id="retro-stage"
+                  id="retro-template"
                   className={styles.select}
-                  value={form.stage}
-                  onChange={(e) => handleChange('stage', e.target.value as RetroStage)}
+                  value={selectedTemplateId}
+                  onChange={(event) => setSelectedTemplateId(event.target.value)}
+                  disabled={isSaving}
                 >
-                  {STAGE_OPTIONS.map((s) => (
-                    <option key={s} value={s}>{s}</option>
+                  <option value="">템플릿 선택</option>
+                  {templates.map((template) => (
+                    <option key={template.id} value={template.id}>
+                      {template.name}
+                    </option>
                   ))}
                 </select>
+                <button
+                  type="button"
+                  className={styles.addSectionBtn}
+                  onClick={() => void applyTemplateLocally()}
+                  disabled={!selectedTemplateId || isSaving}
+                >
+                  적용
+                </button>
               </div>
             </div>
+
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="retro-date">날짜</label>
-              <input
-                id="retro-date"
-                className={styles.input}
-                type="date"
-                value={form.date}
-                onChange={(e) => handleChange('date', e.target.value)}
-              />
+              <label className={styles.label}>AI 질문</label>
+              <button
+                type="button"
+                className={styles.addSectionBtn}
+                onClick={() => void handleGenerateAiQuestions()}
+                disabled={isSaving || isGeneratingQuestions}
+              >
+                <Sparkles size={14} />
+                {isGeneratingQuestions ? '생성 중...' : 'AI 질문 받기'}
+              </button>
             </div>
           </div>
 
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="retro-question">질문/과제 내용</label>
-            <textarea
-              id="retro-question"
-              className={styles.textarea}
-              placeholder="어떤 질문을 받았거나 어떤 과제를 수행했나요?"
-              value={form.question}
-              onChange={(e) => handleChange('question', e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="retro-answer">내 답변/대응</label>
-            <textarea
-              id="retro-answer"
-              className={styles.textarea}
-              placeholder="어떻게 답변하거나 대응했나요?"
-              value={form.answer}
-              onChange={(e) => handleChange('answer', e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="retro-reflection">반성 및 개선점</label>
-            <textarea
-              id="retro-reflection"
-              className={styles.textarea}
-              placeholder="무엇을 개선할 수 있을까요?"
-              value={form.reflection}
-              onChange={(e) => handleChange('reflection', e.target.value)}
-              rows={3}
-            />
-          </div>
-
-          <div className={styles.field}>
-            <label className={styles.label} htmlFor="retro-feeling">감정/느낌</label>
-            <textarea
-              id="retro-feeling"
-              className={styles.textarea}
-              placeholder="어떤 기분이 들었나요?"
-              value={form.feeling}
-              onChange={(e) => handleChange('feeling', e.target.value)}
-              rows={2}
-            />
-          </div>
-
-          {/* 추가 항목 */}
-          {form.extraSections.map((section) => (
-            <div key={section.id} className={styles.field}>
-              <label className={styles.label}>{section.title}</label>
-              <textarea
-                className={styles.textarea}
-                value={section.content}
-                onChange={(e) => updateExtraSection(section.id, e.target.value)}
-                rows={2}
-              />
+          {form.items.map((item, index) => (
+            <div key={`retro-item-${index}`} className={styles.field}>
+              <div className={styles.row}>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor={`retro-question-${index}`}>
+                    질문 {index + 1}
+                  </label>
+                  <textarea
+                    id={`retro-question-${index}`}
+                    className={styles.textarea}
+                    placeholder="회고할 질문을 입력하세요"
+                    value={item.question}
+                    onChange={(event) =>
+                      updateItem(index, { question: event.target.value })
+                    }
+                    rows={2}
+                    disabled={isSaving}
+                  />
+                </div>
+                <div className={styles.field}>
+                  <label className={styles.label} htmlFor={`retro-answer-${index}`}>
+                    답변
+                  </label>
+                  <textarea
+                    id={`retro-answer-${index}`}
+                    className={styles.textarea}
+                    placeholder="답변을 입력하세요"
+                    value={item.answer}
+                    onChange={(event) =>
+                      updateItem(index, { answer: event.target.value })
+                    }
+                    rows={2}
+                    disabled={isSaving}
+                  />
+                </div>
+              </div>
+              <div className={styles.actions}>
+                <span />
+                <button
+                  type="button"
+                  className={styles.cancelBtn}
+                  onClick={() => removeItem(index)}
+                  disabled={isSaving}
+                >
+                  <Trash2 size={14} />
+                  항목 삭제
+                </button>
+              </div>
             </div>
           ))}
 
-          <div className={styles.addSectionRow}>
-            <input
-              className={styles.sectionInput}
-              type="text"
-              placeholder="항목 이름 (예: 회사 분위기)"
-              value={newSectionTitle}
-              onChange={(e) => setNewSectionTitle(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter') { e.preventDefault(); addExtraSection(); } }}
-            />
-            <button type="button" className={styles.addSectionBtn} onClick={addExtraSection}>
-              <Plus size={14} />
-              추가
-            </button>
-          </div>
+          <button type="button" className={styles.addSectionBtn} onClick={() => addItem()} disabled={isSaving}>
+            <Plus size={14} />
+            항목 추가
+          </button>
 
           <div className={styles.actions}>
-            <button type="button" className={styles.cancelBtn} onClick={onClose}>취소</button>
-            <button type="submit" className={styles.saveBtn}>작성 완료</button>
+            <button type="button" className={styles.cancelBtn} onClick={onClose} disabled={isSaving}>
+              취소
+            </button>
+            <button type="submit" className={styles.saveBtn} disabled={isSaving}>
+              {isEditMode ? '수정 완료' : '작성 완료'}
+            </button>
           </div>
         </form>
       </div>

@@ -46,19 +46,19 @@
     border-radius: 50%;
   }
 
-  &.채용공고 {
+  &.JOB_POSTING {
     background: #eef2ff;
     color: #4f46e5;
     &::before { background: #4f46e5; }
   }
 
-  &.내_프로세스 {
+  &.APPLICATION_PROCESS {
     background: #dcfce7;
     color: #16a34a;
     &::before { background: #16a34a; }
   }
 
-  &.개인_일정 {
+  &.PERSONAL {
     background: #fff7ed;
     color: #ea580c;
     &::before { background: #ea580c; }
@@ -192,5 +192,11 @@
   &:hover {
     background: #f8fafc;
     border-color: #cbd5e1;
+  }
+
+  &:disabled {
+    background: #f8fafc;
+    color: #94a3b8;
+    cursor: not-allowed;
   }
 }

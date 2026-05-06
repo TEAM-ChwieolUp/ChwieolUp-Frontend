@@ -1,27 +1,23 @@
 'use client';
 
-import { BookOpen, MessageSquare, TrendingUp, Heart, FileText, Trash2, Pencil } from 'lucide-react';
-import { Retrospective, STAGE_COLORS } from './types';
+import { BookOpen, CalendarClock, FileText, Pencil, Trash2 } from 'lucide-react';
+import { RetrospectiveDetail } from './types';
 import styles from './RetroDetail.module.scss';
 
 interface RetroDetailProps {
-  retro: Retrospective | null;
-  onEdit: (retro: Retrospective) => void;
+  retro: RetrospectiveDetail | null;
+  onEdit: (retro: RetrospectiveDetail) => void;
   onDelete: (id: string) => void;
 }
 
-function formatDate(dateStr: string) {
-  const d = new Date(dateStr + 'T00:00:00');
+function formatDateTime(dateStr: string) {
+  const date = new Date(dateStr);
   const days = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-  return `${d.getFullYear()}년 ${d.getMonth() + 1}월 ${d.getDate()}일 ${days[d.getDay()]}`;
-}
 
-const SECTION_ICONS = {
-  question: BookOpen,
-  answer: MessageSquare,
-  reflection: TrendingUp,
-  feeling: Heart,
-};
+  return `${date.getFullYear()}년 ${date.getMonth() + 1}월 ${date.getDate()}일 ${
+    days[date.getDay()]
+  } ${String(date.getHours()).padStart(2, '0')}:${String(date.getMinutes()).padStart(2, '0')}`;
+}
 
 export default function RetroDetail({ retro, onEdit, onDelete }: RetroDetailProps) {
   if (!retro) {
@@ -38,17 +34,15 @@ export default function RetroDetail({ retro, onEdit, onDelete }: RetroDetailProp
     );
   }
 
-  const stageColor = STAGE_COLORS[retro.stage];
-
   return (
     <div className={styles.detail}>
       <div className={styles.detailHeader}>
         <div className={styles.detailTopRow}>
           <span
             className={styles.stageBadge}
-            style={{ background: stageColor.bg, color: stageColor.text }}
+            style={{ background: `${retro.stageColor}22`, color: retro.stageColor }}
           >
-            {retro.stage}
+            {retro.stageName}
           </span>
           <div className={styles.detailActions}>
             <button className={styles.editBtn} onClick={() => onEdit(retro)}>
@@ -62,85 +56,48 @@ export default function RetroDetail({ retro, onEdit, onDelete }: RetroDetailProp
         </div>
         <h2 className={styles.detailCompany}>{retro.company}</h2>
         <p className={styles.detailPosition}>{retro.position}</p>
-        <p className={styles.detailDate}>{formatDate(retro.date)}</p>
+        <p className={styles.detailDate}>
+          <CalendarClock size={14} />
+          <span>작성 {formatDateTime(retro.createdAt)}</span>
+          <span>수정 {formatDateTime(retro.updatedAt)}</span>
+        </p>
       </div>
 
       <div className={styles.sections}>
-        {retro.question && (
-          <SectionCard
-            icon={SECTION_ICONS.question}
-            title="질문/과제 내용"
-            content={retro.question}
-            color="#3b82f6"
-            bg="#eff6ff"
-          />
-        )}
-        {retro.answer && (
-          <SectionCard
-            icon={SECTION_ICONS.answer}
-            title="내 답변/대응"
-            content={retro.answer}
-            color="#16a34a"
-            bg="#f0fdf4"
-          />
-        )}
-        {retro.reflection && (
-          <SectionCard
-            icon={SECTION_ICONS.reflection}
-            title="반성 및 개선점"
-            content={retro.reflection}
-            color="#7c3aed"
-            bg="#faf5ff"
-          />
-        )}
-        {retro.feeling && (
-          <SectionCard
-            icon={SECTION_ICONS.feeling}
-            title="감정/느낌"
-            content={retro.feeling}
-            color="#ea580c"
-            bg="#fff7ed"
-          />
-        )}
-
-        {retro.extraSections.length > 0 && (
-          <>
-            <h3 className={styles.extraTitle}>추가 항목</h3>
-            {retro.extraSections.map((section) => (
-              <SectionCard
-                key={section.id}
-                icon={FileText}
-                title={section.title}
-                content={section.content}
-                color="#64748b"
-                bg="#f8fafc"
-              />
-            ))}
-          </>
+        {retro.items.length === 0 ? (
+          <div className={styles.sectionCard} style={{ '--section-bg': '#f8fafc', '--section-color': '#64748b' } as React.CSSProperties}>
+            <div className={styles.sectionHeader}>
+              <span className={styles.sectionIconWrap}>
+                <BookOpen size={15} />
+              </span>
+              <h3 className={styles.sectionTitle}>아직 작성된 항목이 없습니다</h3>
+            </div>
+            <p className={styles.sectionContent}>수정 버튼을 눌러 질문과 답변을 추가해보세요.</p>
+          </div>
+        ) : (
+          retro.items.map((item, index) => (
+            <div
+              key={`${retro.id}-${index}-${item.question}`}
+              className={styles.sectionCard}
+              style={{ '--section-bg': '#f8fafc', '--section-color': retro.stageColor } as React.CSSProperties}
+            >
+              <div className={styles.sectionHeader}>
+                <span className={styles.sectionIconWrap}>
+                  <BookOpen size={15} />
+                </span>
+                <h3 className={styles.sectionTitle}>문항 {index + 1}</h3>
+              </div>
+              <p className={styles.sectionContent}>{item.question}</p>
+              <div className={styles.answerBlock}>
+                <p className={styles.answerLabel}>답변</p>
+                <p className={styles.sectionContent}>
+                  {item.answer?.trim() ? item.answer : '아직 작성된 답변이 없습니다.'}
+                </p>
+              </div>
+            </div>
+          ))
         )}
       </div>
-    </div>
-  );
-}
-
-interface SectionCardProps {
-  icon: React.ElementType;
-  title: string;
-  content: string;
-  color: string;
-  bg: string;
-}
-
-function SectionCard({ icon: Icon, title, content, color, bg }: SectionCardProps) {
-  return (
-    <div className={styles.sectionCard} style={{ '--section-bg': bg, '--section-color': color } as React.CSSProperties}>
-      <div className={styles.sectionHeader}>
-        <span className={styles.sectionIconWrap}>
-          <Icon size={15} />
-        </span>
-        <h3 className={styles.sectionTitle}>{title}</h3>
-      </div>
-      <p className={styles.sectionContent}>{content}</p>
     </div>
   );
 }
