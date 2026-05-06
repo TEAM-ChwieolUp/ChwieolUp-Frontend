@@ -166,6 +166,16 @@
     font-size: 24px;
     font-weight: 700;
     flex-shrink: 0;
+    overflow: hidden;
+  }
+
+  .profileAvatarImage {
+    width: 100%;
+    height: 100%;
+    border-radius: inherit;
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: cover;
   }
 
   .profileHeroCopy {
@@ -220,6 +230,12 @@
       color: #111827;
       font-size: 14px;
       outline: none;
+
+      &:disabled {
+        color: #4b5563;
+        background: #f3f4f6;
+        cursor: not-allowed;
+      }
     }
 
     small {
@@ -232,6 +248,21 @@
 
   .fieldFull {
     grid-column: 1 / -1;
+  }
+
+  .profileNotice {
+    padding: 16px 18px;
+    border: 1px solid #e8eef7;
+    border-radius: 14px;
+    background: #f8fbff;
+
+    p {
+      margin: 0;
+      color: #4b5563;
+      font-size: 13px;
+      line-height: 20px;
+      word-break: keep-all;
+    }
   }
 
   .infoGrid {
