@@ -130,7 +130,7 @@ export default function Header() {
             >
               <div className={styles.popoverHeader}>
                 <h2 className={styles.popoverTitle} id='notifications-popover-title'>
-                  Notifications
+                  알림
                 </h2>
 
                 <button
