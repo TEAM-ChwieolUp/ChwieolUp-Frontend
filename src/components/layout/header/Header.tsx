@@ -3,6 +3,7 @@
 import { Bell, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Manrope } from 'next/font/google';
+import { logoutSession } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import styles from './Header.module.scss';
     
@@ -29,7 +30,7 @@ const notifications = [
 export default function Header() {
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const [openModalState, setOpenModalState] = useState<{
-    kind: 'notifications';
+    kind: 'notifications' | 'profile';
   } | null>(null);
   const openModal = openModalState?.kind ?? null;
   const user = useAuthStore((state) => state.user);
@@ -93,7 +94,16 @@ export default function Header() {
             <span className={styles.notificationDot} aria-hidden='true' />
           </button>
 
-          <div className={styles.profile}>
+          <button
+            type='button'
+            className={styles.profile}
+            aria-label='프로필 정보 열기'
+            onClick={() =>
+              setOpenModalState((current) =>
+                current?.kind === 'profile' ? null : { kind: 'profile' },
+              )
+            }
+          >
             <div className={styles.profileText}>
               <strong className={styles.profileName}>{profileName}</strong>
               <span className={styles.profileTier}>{profileSubtext}</span>
@@ -109,9 +119,9 @@ export default function Header() {
                 profileInitial
               )}
             </div>
-          </div>
+          </button>
 
-          {openModal !== null ? (
+          {openModal === 'notifications' ? (
             <div
               className={styles.popover}
               role='dialog'
@@ -147,6 +157,70 @@ export default function Header() {
                     </span>
                   </article>
                 ))}
+              </div>
+            </div>
+          ) : null}
+
+          {openModal === 'profile' ? (
+            <div
+              className={styles.popover}
+              role='dialog'
+              aria-modal='false'
+              aria-labelledby='profile-popover-title'
+            >
+              <div className={styles.popoverHeader}>
+                <h2 className={styles.popoverTitle} id='profile-popover-title'>
+                  프로필 정보
+                </h2>
+
+                <button
+                  className={styles.closeButton}
+                  type='button'
+                  aria-label='팝오버 닫기'
+                  onClick={() => setOpenModalState(null)}
+                >
+                  <X className={styles.closeIcon} aria-hidden='true' />
+                </button>
+              </div>
+
+              <div className={styles.profilePanel}>
+                <div className={styles.profilePanelHero}>
+                  <div className={styles.profilePanelAvatar} aria-hidden='true'>
+                    {user?.profileImageUrl ? (
+                      <span
+                        className={styles.profileAvatarImage}
+                        style={{ backgroundImage: `url(${user.profileImageUrl})` }}
+                      />
+                    ) : (
+                      profileInitial
+                    )}
+                  </div>
+
+                  <div className={styles.profilePanelCopy}>
+                    <strong>{profileName}</strong>
+                    <span>{profileSubtext}</span>
+                  </div>
+                </div>
+
+                <div className={styles.profileInfoList}>
+                  <div className={styles.profileInfoItem}>
+                    <span className={styles.profileInfoLabel}>이름</span>
+                    <strong className={styles.profileInfoValue}>{profileName}</strong>
+                  </div>
+
+                  <div className={styles.profileInfoItem}>
+                    <span className={styles.profileInfoLabel}>이메일</span>
+                    <strong className={styles.profileInfoValue}>{profileSubtext}</strong>
+                  </div>
+                </div>
+
+                <button
+                  type='button'
+                  className={styles.logoutButton}
+                  onClick={() => logoutSession()}
+                >
+                  로그아웃
+                </button>
               </div>
             </div>
           ) : null}

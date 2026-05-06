@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useId, useState } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { getMyProfile, userProfileKeys } from '@/features/user/api/profile';
 import { ApiError } from '@/lib/api';
 import styles from './SettingsPage.module.scss';
@@ -45,7 +46,9 @@ type CategoryId = (typeof categories)[number]['id'];
 
 export default function SettingsPage() {
   const sliderId = useId();
-  const [activeCategory, setActiveCategory] = useState<CategoryId>('profile');
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [gmailEnabled, setGmailEnabled] = useState(true);
   const [outlookEnabled, setOutlookEnabled] = useState(false);
   const [sensitivity, setSensitivity] = useState(75);
@@ -67,6 +70,11 @@ export default function SettingsPage() {
   const profileInitial = profileName.trim().slice(0, 1).toUpperCase() || '?';
   const profileProviderLabel =
     profile?.oauth2Provider === 'KAKAO' ? 'Kakao' : 'Google';
+  const requestedTab = searchParams.get('tab');
+  const activeCategory: CategoryId =
+    requestedTab && categories.some((category) => category.id === requestedTab)
+      ? (requestedTab as CategoryId)
+      : 'profile';
 
   function getProfileErrorMessage() {
     if (profileError instanceof ApiError) {
@@ -78,6 +86,10 @@ export default function SettingsPage() {
     }
 
     return '프로필 정보를 불러오지 못했습니다.';
+  }
+
+  function handleCategoryChange(categoryId: CategoryId) {
+    router.replace(`${pathname}?tab=${categoryId}`, { scroll: false });
   }
 
   const renderProfileContent = () => (
@@ -505,7 +517,7 @@ export default function SettingsPage() {
                   className={`${styles.categoryButton} ${
                     activeCategory === category.id ? styles.active : ''
                   }`}
-                  onClick={() => setActiveCategory(category.id)}
+                  onClick={() => handleCategoryChange(category.id)}
                 >
                   <Icon aria-hidden='true' />
                   <span>{category.label}</span>
