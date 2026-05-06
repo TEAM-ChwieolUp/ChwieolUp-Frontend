@@ -122,7 +122,7 @@ export default function KanbanPreview() {
           color: '#e5e7eb',
           cards: [],
         })) : columns).map((column) => (
-          <div key={column.title} className={styles.column}>
+          <div key={column.id} className={styles.column}>
             <div className={styles.columnHeader}>
               <span className={styles.columnTitle}>{column.title}</span>
               <span className={styles.columnCount}>{column.count}</span>
