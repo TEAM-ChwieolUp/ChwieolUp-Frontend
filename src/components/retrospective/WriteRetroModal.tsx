@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Sparkles, Trash2, X } from 'lucide-react';
 import { KanbanStage } from '@/components/kanban/types';
 import {
@@ -36,6 +36,17 @@ function createEmptyItem(): RetrospectiveItem {
   };
 }
 
+function createFormState(
+  initial: RetrospectiveDetail | undefined,
+  applications: ApplicationOption[]
+): RetrospectiveEditorForm {
+  return {
+    applicationId: initial?.applicationId ?? applications[0]?.id ?? '',
+    stageId: initial?.stageId ?? '',
+    items: initial?.items.length ? initial.items : [createEmptyItem()],
+  };
+}
+
 export default function WriteRetroModal({
   initial,
   applications,
@@ -47,11 +58,9 @@ export default function WriteRetroModal({
   onApplyTemplate,
   onGenerateAiQuestions,
 }: WriteRetroModalProps) {
-  const [form, setForm] = useState<RetrospectiveEditorForm>({
-    applicationId: initial?.applicationId ?? applications[0]?.id ?? '',
-    stageId: initial?.stageId ?? '',
-    items: initial?.items.length ? initial.items : [createEmptyItem()],
-  });
+  const [form, setForm] = useState<RetrospectiveEditorForm>(() =>
+    createFormState(initial, applications)
+  );
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
   const isEditMode = Boolean(initial);
@@ -59,6 +68,11 @@ export default function WriteRetroModal({
     () => stages.filter((stage) => stage.kind === 'custom'),
     [stages]
   );
+
+  useEffect(() => {
+    setForm(createFormState(initial, applications));
+    setSelectedTemplateId('');
+  }, [applications, initial]);
 
   function handleChange<K extends keyof RetrospectiveEditorForm>(
     key: K,

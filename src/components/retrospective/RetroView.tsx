@@ -5,8 +5,8 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Plus, Search } from 'lucide-react';
 import { KanbanStage } from '@/components/kanban/types';
 import { ApiError } from '@/lib/api';
-import { listApplications } from '@/features/kanban/api/applications';
-import { listStages } from '@/features/kanban/api/stages';
+import { listApplications, applicationKeys } from '@/features/kanban/api/applications';
+import { listStages, stageKeys } from '@/features/kanban/api/stages';
 import {
   addRetrospectiveItem,
   applyRetrospectiveTemplate,
@@ -90,19 +90,74 @@ function mapSummaryWithContext(
 
 function mapDetailWithContext(
   detail: Awaited<ReturnType<typeof getRetrospective>>,
+  applications: Awaited<ReturnType<typeof listApplications>>['cards'],
+  stages: KanbanStage[],
   summaries: RetrospectiveSummary[]
 ): RetrospectiveDetail | null {
-  const summary = summaries.find((entry) => entry.id === detail.id);
+  const application = applications.find((card) => card.id === detail.applicationId);
 
-  if (!summary) {
+  if (!application) {
     return null;
   }
 
+  const summary = summaries.find((entry) => entry.id === detail.id);
+  const stage = detail.stageId
+    ? stages.find((entry) => entry.id === detail.stageId)
+    : null;
+
   return {
-    ...summary,
+    id: detail.id,
+    applicationId: detail.applicationId,
+    stageId: detail.stageId,
+    itemCount: detail.items.length,
     items: detail.items,
     createdAt: detail.createdAt,
     updatedAt: detail.updatedAt,
+    company: application.company,
+    position: application.position,
+    stageName: stage?.name ?? summary?.stageName ?? OVERALL_STAGE_NAME,
+    stageColor: stage?.color ?? summary?.stageColor ?? OVERALL_STAGE_COLOR,
+    isOverall: !detail.stageId,
+  };
+}
+
+function buildRetrospectiveDetail(
+  payload: {
+    retrospectiveId: string;
+    applicationId: string;
+    stageId: string | null;
+    items: RetrospectiveItem[];
+    createdAt: string;
+    updatedAt: string;
+  },
+  applications: Awaited<ReturnType<typeof listApplications>>['cards'],
+  stages: KanbanStage[],
+  summaries: RetrospectiveSummary[]
+): RetrospectiveDetail | null {
+  const application = applications.find((card) => card.id === payload.applicationId);
+
+  if (!application) {
+    return null;
+  }
+
+  const summary = summaries.find((entry) => entry.id === payload.retrospectiveId);
+  const stage = payload.stageId
+    ? stages.find((entry) => entry.id === payload.stageId)
+    : null;
+
+  return {
+    id: payload.retrospectiveId,
+    applicationId: payload.applicationId,
+    stageId: payload.stageId,
+    itemCount: payload.items.length,
+    items: payload.items,
+    createdAt: payload.createdAt,
+    updatedAt: payload.updatedAt,
+    company: application.company,
+    position: application.position,
+    stageName: stage?.name ?? summary?.stageName ?? OVERALL_STAGE_NAME,
+    stageColor: stage?.color ?? summary?.stageColor ?? OVERALL_STAGE_COLOR,
+    isOverall: !payload.stageId,
   };
 }
 
@@ -119,12 +174,12 @@ export default function RetroView() {
   const [editingRetroId, setEditingRetroId] = useState<string | null>(null);
 
   const { data: boardData } = useQuery({
-    queryKey: ['retrospectives', 'board-context'],
+    queryKey: applicationKeys.board(),
     queryFn: () => listApplications(),
   });
 
   const { data: stages = [] } = useQuery({
-    queryKey: ['retrospectives', 'stages'],
+    queryKey: stageKeys.all,
     queryFn: listStages,
   });
 
@@ -161,9 +216,9 @@ export default function RetroView() {
     queryKey: selectedId ? retrospectiveKeys.detail(selectedId) : ['retrospectives', 'detail', 'idle'],
     queryFn: async () => {
       const detail = await getRetrospective(selectedId!);
-      return mapDetailWithContext(detail, retrospectiveSummaries);
+      return mapDetailWithContext(detail, applications, stages, retrospectiveSummaries);
     },
-    enabled: Boolean(selectedId),
+    enabled: Boolean(selectedId) && applications.length > 0 && stages.length > 0,
   });
 
   const { data: editingRetroDetail } = useQuery({
@@ -172,9 +227,9 @@ export default function RetroView() {
       : ['retrospectives', 'editing', 'idle'],
     queryFn: async () => {
       const detail = await getRetrospective(editingRetroId!);
-      return mapDetailWithContext(detail, retrospectiveSummaries);
+      return mapDetailWithContext(detail, applications, stages, retrospectiveSummaries);
     },
-    enabled: Boolean(editingRetroId),
+    enabled: Boolean(editingRetroId) && applications.length > 0 && stages.length > 0,
   });
 
   const saveMutation = useMutation({
@@ -202,36 +257,76 @@ export default function RetroView() {
 
         return {
           retrospectiveId: created.id,
+          applicationId: created.applicationId,
+          stageId: created.stageId,
           items,
+          createdAt: created.createdAt,
+          updatedAt: new Date().toISOString(),
         };
       }
 
       const current = await getRetrospective(retrospectiveId);
       const desiredItems = form.items;
+      let items = current.items;
       const overlap = Math.min(current.items.length, desiredItems.length);
 
       for (let index = current.items.length - 1; index >= desiredItems.length; index -= 1) {
-        await deleteRetrospectiveItem(retrospectiveId, index);
+        const deleted = await deleteRetrospectiveItem(retrospectiveId, index);
+        items = deleted.items;
       }
 
       for (let index = 0; index < overlap; index += 1) {
         if (!areItemsEqual(current.items[index], desiredItems[index])) {
-          await updateRetrospectiveItem(retrospectiveId, index, desiredItems[index]);
+          const updated = await updateRetrospectiveItem(
+            retrospectiveId,
+            index,
+            desiredItems[index]
+          );
+          items = updated.items;
         }
       }
 
       for (let index = current.items.length; index < desiredItems.length; index += 1) {
-        await addRetrospectiveItem(retrospectiveId, desiredItems[index]);
+        const added = await addRetrospectiveItem(retrospectiveId, desiredItems[index]);
+        items = added.items;
       }
 
       return {
         retrospectiveId,
-        items: desiredItems,
+        applicationId: current.applicationId,
+        stageId: current.stageId,
+        items,
+        createdAt: current.createdAt,
+        updatedAt: new Date().toISOString(),
       };
     },
-    onSuccess: async ({ retrospectiveId }) => {
+    onSuccess: async ({
+      retrospectiveId,
+      applicationId,
+      stageId,
+      items,
+      createdAt,
+      updatedAt,
+    }) => {
+      const nextDetail = buildRetrospectiveDetail(
+        {
+          retrospectiveId,
+          applicationId,
+          stageId,
+          items,
+          createdAt,
+          updatedAt,
+        },
+        applications,
+        stages,
+        retrospectiveSummaries
+      );
+
+      if (nextDetail) {
+        queryClient.setQueryData(retrospectiveKeys.detail(retrospectiveId), nextDetail);
+      }
+
       await queryClient.invalidateQueries({ queryKey: retrospectiveKeys.all });
-      await queryClient.invalidateQueries({ queryKey: retrospectiveKeys.detail(retrospectiveId) });
       setSelectedId(retrospectiveId);
       setEditingRetroId(null);
       setShowWriteModal(false);
@@ -463,7 +558,7 @@ export default function RetroView() {
 
       {showWriteModal && (
         <WriteRetroModal
-          initial={editingRetroDetail ?? undefined}
+          initial={editingRetroId ? (editingRetroDetail ?? undefined) : undefined}
           applications={applications.map((application) => ({
             id: application.id,
             company: application.company,
