@@ -39,6 +39,14 @@
   gap: 1.5rem;
 }
 
+.emptyState {
+  padding: 1rem 0;
+  color: #6b7280;
+  font-size: 0.9rem;
+  line-height: 1.5;
+  font-weight: 500;
+}
+
 .entry {
   display: flex;
   align-items: flex-start;
