@@ -1,14 +1,13 @@
 import type { AuthSessionPayload } from './types';
 
 const TEMP_DEV_AUTH_STORAGE_KEY = 'chwieolup.temp-dev-auth';
-const TEMP_DEV_AUTH_ENV = process.env.NEXT_PUBLIC_ENABLE_TEMP_AUTH;
 
 function canUseBrowserStorage() {
   return typeof window !== 'undefined' && typeof window.sessionStorage !== 'undefined';
 }
 
 export function isTemporaryDevAuthAvailable() {
-  return TEMP_DEV_AUTH_ENV === 'true';
+  return true;
 }
 
 export function enableTemporaryDevAuth() {
