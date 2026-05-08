@@ -7,6 +7,7 @@ import {
 import { createApiError, buildRequestUrl, parseResponseBody } from './http';
 import {
   clearAuthSession,
+  markAuthBootstrapped,
   markAuthBootstrapping,
   setAuthSession,
 } from '@/store/auth-store';
