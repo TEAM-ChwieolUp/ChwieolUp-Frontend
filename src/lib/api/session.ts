@@ -1,8 +1,12 @@
 import { LEGACY_AUTH_COOKIE, LOGIN_ROUTE, REFRESH_ENDPOINT } from './config';
+import {
+  createTemporaryDevSession,
+  disableTemporaryDevAuth,
+  isTemporaryDevAuthEnabled,
+} from './dev-auth';
 import { createApiError, buildRequestUrl, parseResponseBody } from './http';
 import {
   clearAuthSession,
-  markAuthBootstrapped,
   markAuthBootstrapping,
   setAuthSession,
 } from '@/store/auth-store';
@@ -76,6 +80,7 @@ export function onAuthFailure(handler: (() => void) | null) {
 }
 
 export function notifyAuthFailure() {
+  disableTemporaryDevAuth();
   clearAuthSession();
 
   if (authFailureHandler) {
@@ -103,6 +108,11 @@ export async function refreshAccessToken() {
 
 export async function bootstrapSession() {
   markAuthBootstrapping();
+
+  if (isTemporaryDevAuthEnabled()) {
+    setAuthSession(createTemporaryDevSession());
+    return;
+  }
 
   try {
     await refreshAccessToken();

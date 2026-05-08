@@ -1,4 +1,6 @@
 import { api } from '@/lib/api';
+import { shouldUseTemporaryDevData } from '@/lib/api/dev-auth';
+import { TEMP_DEV_TAGS } from '@/lib/api/dev-mock-data';
 import type { ApiSuccessResponse } from '@/lib/api';
 
 export interface TagResponse {
@@ -23,6 +25,10 @@ export const tagKeys = {
 };
 
 export async function listTags() {
+  if (shouldUseTemporaryDevData()) {
+    return TEMP_DEV_TAGS;
+  }
+
   const response = await api.get<ApiSuccessResponse<TagResponse[]>>('/api/tags');
   return response.data.sort((a, b) => a.id - b.id);
 }

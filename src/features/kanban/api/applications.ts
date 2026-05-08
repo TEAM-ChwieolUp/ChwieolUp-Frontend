@@ -1,4 +1,6 @@
 import { api } from '@/lib/api';
+import { TEMP_DEV_CARDS, TEMP_DEV_STAGES } from '@/lib/api/dev-mock-data';
+import { shouldUseTemporaryDevData } from '@/lib/api/dev-auth';
 import type { ApiSuccessResponse } from '@/lib/api';
 import type { QueryParams } from '@/lib/api';
 import type {
@@ -147,6 +149,13 @@ function mapApplicationToCard(
 }
 
 export async function listApplications(params?: ApplicationsQueryParams): Promise<BoardData> {
+  if (shouldUseTemporaryDevData()) {
+    return {
+      stages: TEMP_DEV_STAGES,
+      cards: TEMP_DEV_CARDS,
+    };
+  }
+
   const response = await api.get<ApiSuccessResponse<BoardResponseData>>('/api/applications', {
     params,
   });

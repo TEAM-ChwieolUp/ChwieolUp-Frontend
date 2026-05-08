@@ -1,4 +1,6 @@
 import { api, fetcher } from '@/lib/api';
+import { shouldUseTemporaryDevData } from '@/lib/api/dev-auth';
+import { TEMP_DEV_CALENDAR_EVENTS } from '@/lib/api/dev-mock-data';
 import type { ApiSuccessResponse, QueryParams } from '@/lib/api';
 import type {
   CalendarApplicationOption,
@@ -61,6 +63,16 @@ function mapScheduleEventToCalendarEvent(event: ScheduleEventResponse): Calendar
 export async function listCalendarEvents(
   params: CalendarQueryParams
 ): Promise<CalendarEvent[]> {
+  if (shouldUseTemporaryDevData()) {
+    return TEMP_DEV_CALENDAR_EVENTS.filter((event) => {
+      const eventStart = new Date(event.startAt).getTime();
+      const from = new Date(params.from).getTime();
+      const to = new Date(params.to).getTime();
+
+      return eventStart >= from && eventStart <= to;
+    });
+  }
+
   const calendarResponse = await api.get<ApiSuccessResponse<CalendarResponseData>>(
     '/api/schedule/calendar',
     {
@@ -127,6 +139,35 @@ export async function downloadScheduleEventIcs(
   eventId: string,
   fileName?: string
 ) {
+  if (shouldUseTemporaryDevData()) {
+    const calendarText = [
+      'BEGIN:VCALENDAR',
+      'VERSION:2.0',
+      'PRODID:-//ChwieolUp//Temp Dev Event//KO',
+      'BEGIN:VEVENT',
+      `UID:${eventId}@chwieolup.local`,
+      'DTSTAMP:20260508T000000Z',
+      'DTSTART:20260510T040000Z',
+      'DTEND:20260510T060000Z',
+      'SUMMARY:OpenAI Korea 과제 제출',
+      'END:VEVENT',
+      'END:VCALENDAR',
+    ].join('\r\n');
+    const blob = new Blob([calendarText], {
+      type: 'text/calendar;charset=utf-8',
+    });
+    const downloadUrl = URL.createObjectURL(blob);
+    const anchor = document.createElement('a');
+
+    anchor.href = downloadUrl;
+    anchor.download = fileName ?? `cheerup-event-${eventId}.ics`;
+    document.body.appendChild(anchor);
+    anchor.click();
+    anchor.remove();
+    URL.revokeObjectURL(downloadUrl);
+    return;
+  }
+
   const calendarText = await fetcher<string>(
     `/api/schedule/events/${eventId}/export`
   );
