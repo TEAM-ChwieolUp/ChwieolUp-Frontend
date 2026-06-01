@@ -13,8 +13,8 @@ export interface CreateTagRequest {
 }
 
 export interface UpdateTagRequest {
-  name?: string;
-  color?: string;
+  name?: string | null;
+  color?: string | null;
   isEmpty?: boolean;
 }
 
@@ -35,7 +35,10 @@ export async function createTag(payload: CreateTagRequest) {
 export async function updateTag(tagId: string, payload: UpdateTagRequest) {
   const response = await api.patch<ApiSuccessResponse<TagResponse>>(
     `/api/tags/${tagId}`,
-    payload,
+    {
+      ...payload,
+      isEmpty: payload.isEmpty ?? false,
+    },
   );
   return response.data;
 }

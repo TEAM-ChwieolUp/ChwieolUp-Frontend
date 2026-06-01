@@ -28,13 +28,17 @@ export interface ApiRequestOptions
 
 export interface ApiSuccessResponse<T> {
   data: T;
+  meta?: {
+    timestamp: string;
+    requestId: string | null;
+  };
   message?: string;
 }
 
 export interface AuthUser {
   id: number;
   email: string;
-  name: string;
+  name: string | null;
   profileImageUrl: string | null;
 }
 

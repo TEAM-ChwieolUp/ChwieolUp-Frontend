@@ -35,8 +35,10 @@ export interface CreateScheduleEventPayload {
 }
 
 export interface UpdateScheduleEventPayload {
-  title?: string;
-  startAt?: string;
+  category?: ScheduleCategory | null;
+  applicationId?: string | null;
+  title?: string | null;
+  startAt?: string | null;
   endAt?: string | null;
 }
 
@@ -96,8 +98,15 @@ export async function updateScheduleEvent(
   const response = await api.patch<ApiSuccessResponse<ScheduleEventResponse>>(
     `/api/schedule/events/${eventId}`,
     {
-      title: payload.title,
-      startAt: payload.startAt,
+      category: payload.category,
+      applicationId:
+        payload.applicationId === undefined
+          ? undefined
+          : payload.applicationId === null || payload.applicationId === ''
+            ? null
+            : Number(payload.applicationId),
+      title: payload.title ?? null,
+      startAt: payload.startAt ?? null,
       endAt: payload.endAt ?? null,
     }
   );

@@ -17,13 +17,13 @@ export interface StageResponse {
 export interface CreateStageRequest {
   name: string;
   color: string;
-  displayOrder?: number;
+  displayOrder?: number | null;
 }
 
 export interface UpdateStageRequest {
-  name?: string;
-  color?: string;
-  displayOrder?: number;
+  name?: string | null;
+  color?: string | null;
+  displayOrder?: number | null;
   isEmpty?: boolean;
 }
 
@@ -72,7 +72,10 @@ export async function createStage(payload: CreateStageRequest) {
 export async function updateStage(stageId: string, payload: UpdateStageRequest) {
   const response = await api.patch<ApiSuccessResponse<StageResponse>>(
     `/api/stages/${stageId}`,
-    payload,
+    {
+      ...payload,
+      isEmpty: payload.isEmpty ?? false,
+    },
   );
   return mapStageResponseToKanbanStage(response.data);
 }

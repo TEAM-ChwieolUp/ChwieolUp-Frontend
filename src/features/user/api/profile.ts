@@ -1,13 +1,13 @@
 import { api } from '@/lib/api';
 import type { ApiSuccessResponse } from '@/lib/api';
 
-export type OAuth2Provider = 'GOOGLE' | 'KAKAO';
+export type OAuth2Provider = 'GOOGLE' | 'KAKAO' | 'MICROSOFT';
 
 export interface UserProfile {
   id: number;
   oauth2Provider: OAuth2Provider;
   email: string;
-  name: string;
+  name: string | null;
   profileImageUrl: string | null;
 }
 
