@@ -91,7 +91,7 @@ export default function KanbanPreview() {
               column.cards.map((card) => (
                 <article
                   key={card.id}
-                  className={cardStyles.card}
+                  className={getCardClassNames(cardStyles.card, styles.previewCard)}
                 >
                   <div className={cardStyles.cardTopRow}>
                     <span className={cardStyles.dragHandle} aria-hidden='true'>
