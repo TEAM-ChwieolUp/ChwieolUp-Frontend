@@ -3,13 +3,13 @@ import { shouldUseTemporaryDevData } from '@/lib/api/dev-auth';
 import { TEMP_DEV_PROFILE } from '@/lib/api/dev-mock-data';
 import type { ApiSuccessResponse } from '@/lib/api';
 
-export type OAuth2Provider = 'GOOGLE' | 'KAKAO';
+export type OAuth2Provider = 'GOOGLE' | 'KAKAO' | 'MICROSOFT';
 
 export interface UserProfile {
   id: number;
   oauth2Provider: OAuth2Provider;
   email: string;
-  name: string;
+  name: string | null;
   profileImageUrl: string | null;
 }
 

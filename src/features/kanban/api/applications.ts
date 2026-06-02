@@ -20,13 +20,17 @@ interface ApplicationCardResponse {
   id: number;
   companyName: string;
   position: string;
-  appliedAt: string;
+  appliedAt: string | null;
   deadlineAt?: string | null;
   priority: Priority;
   memo?: string | null;
   jobPostingUrl?: string | null;
   noResponseDays?: number | null;
   tags: TagSummaryResponse[];
+}
+
+interface ApplicationResponse extends ApplicationCardResponse {
+  stageId: number;
 }
 
 interface StageNodeResponse {
@@ -43,8 +47,8 @@ interface BoardResponseData {
 }
 
 export interface ApplicationsQueryParams extends QueryParams {
-  stage?: string;
-  tag?: string;
+  stage?: string | number;
+  tag?: string | number;
   priority?: Priority;
 }
 
@@ -52,7 +56,7 @@ export interface UpsertApplicationPayload {
   stageId: string;
   companyName: string;
   position: string;
-  appliedAt: string;
+  appliedAt?: string | null;
   deadlineAt?: string | null;
   noResponseDays?: number;
   priority?: Priority;
@@ -65,7 +69,7 @@ export interface UpdateApplicationPayload {
   companyName?: string;
   position?: string;
   stageId?: string;
-  appliedAt?: string;
+  appliedAt?: string | null;
   deadlineAt?: string | null;
   noResponseDays?: number;
   priority?: Priority;
@@ -96,7 +100,11 @@ function getStageKind(category: StageCategory): KanbanStage['kind'] {
   }
 }
 
-function formatAppliedDate(value: string) {
+function formatAppliedDate(value?: string | null) {
+  if (!value) {
+    return '';
+  }
+
   const date = new Date(value);
 
   if (Number.isNaN(date.getTime())) {
@@ -173,11 +181,16 @@ export async function listApplications(params?: ApplicationsQueryParams): Promis
 }
 
 export async function createApplication(payload: UpsertApplicationPayload) {
-  const response = await api.post<ApiSuccessResponse<ApplicationCardResponse>>(
+  const response = await api.post<ApiSuccessResponse<ApplicationResponse>>(
     '/api/applications',
     {
       ...payload,
       stageId: Number(payload.stageId),
+      appliedAt: payload.appliedAt ?? null,
+      deadlineAt: payload.deadlineAt ?? null,
+      noResponseDays: payload.noResponseDays ?? null,
+      priority: payload.priority ?? 'NORMAL',
+      tagIds: payload.tagIds ?? [],
     }
   );
 
@@ -185,12 +198,13 @@ export async function createApplication(payload: UpsertApplicationPayload) {
 }
 
 export async function updateApplication(applicationId: string, payload: UpdateApplicationPayload) {
-  const response = await api.patch<ApiSuccessResponse<ApplicationCardResponse>>(
+  const response = await api.patch<ApiSuccessResponse<ApplicationResponse>>(
     `/api/applications/${applicationId}`,
     {
       ...payload,
       stageId: payload.stageId ? Number(payload.stageId) : payload.stageId,
       tagIds: payload.tagIds ?? undefined,
+      isEmpty: payload.isEmpty ?? false,
     }
   );
 

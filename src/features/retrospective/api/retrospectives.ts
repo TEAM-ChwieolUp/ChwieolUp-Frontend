@@ -9,7 +9,7 @@ import type { ApiSuccessResponse } from '@/lib/api';
 
 export interface RetrospectiveItemResponse {
   question: string;
-  answer: string;
+  answer?: string | null;
 }
 
 interface RetrospectiveSummaryResponse {
@@ -58,8 +58,8 @@ export interface CreateRetrospectivePayload {
 }
 
 export interface UpsertRetrospectiveItemPayload {
-  question?: string;
-  answer?: string;
+  question?: string | null;
+  answer?: string | null;
   isEmpty?: boolean;
 }
 
@@ -69,6 +69,13 @@ export const retrospectiveKeys = {
   detail: (retrospectiveId: string) => ['retrospectives', 'detail', retrospectiveId] as const,
   templates: ['retrospectives', 'templates'] as const,
 };
+
+function normalizeRetrospectiveItems(items: RetrospectiveItemResponse[]) {
+  return items.map((item) => ({
+    question: item.question,
+    answer: item.answer ?? '',
+  }));
+}
 
 export async function listApplicationRetrospectives(applicationId: string) {
   if (shouldUseTemporaryDevData()) {
@@ -126,7 +133,7 @@ export async function getRetrospective(retrospectiveId: string) {
     id: String(response.data.id),
     applicationId: String(response.data.applicationId),
     stageId: response.data.stageId === null ? null : String(response.data.stageId),
-    items: response.data.items,
+    items: normalizeRetrospectiveItems(response.data.items),
     createdAt: response.data.createdAt,
     updatedAt: response.data.updatedAt,
   };
@@ -150,7 +157,7 @@ export async function createApplicationRetrospective(
     id: String(response.data.id),
     applicationId: String(response.data.applicationId),
     stageId: response.data.stageId === null ? null : String(response.data.stageId),
-    items: response.data.items,
+    items: normalizeRetrospectiveItems(response.data.items),
     createdAt: response.data.createdAt,
     updatedAt: response.data.updatedAt,
   };
@@ -162,15 +169,20 @@ export async function deleteRetrospective(retrospectiveId: string) {
 
 export async function addRetrospectiveItem(
   retrospectiveId: string,
-  payload: Required<Pick<RetrospectiveItemResponse, 'question'>> &
-    Partial<Pick<RetrospectiveItemResponse, 'answer'>>
+  payload: {
+    question: string;
+    answer?: string | null;
+  }
 ) {
   const response = await api.post<ApiSuccessResponse<RetrospectiveItemsResponseData>>(
     `/api/retrospectives/${retrospectiveId}/items`,
     payload
   );
 
-  return response.data;
+  return {
+    ...response.data,
+    items: normalizeRetrospectiveItems(response.data.items),
+  };
 }
 
 export async function updateRetrospectiveItem(
@@ -180,10 +192,16 @@ export async function updateRetrospectiveItem(
 ) {
   const response = await api.patch<ApiSuccessResponse<RetrospectiveItemsResponseData>>(
     `/api/retrospectives/${retrospectiveId}/items/${index}`,
-    payload
+    {
+      ...payload,
+      isEmpty: payload.isEmpty ?? false,
+    }
   );
 
-  return response.data;
+  return {
+    ...response.data,
+    items: normalizeRetrospectiveItems(response.data.items),
+  };
 }
 
 export async function deleteRetrospectiveItem(
@@ -194,7 +212,10 @@ export async function deleteRetrospectiveItem(
     `/api/retrospectives/${retrospectiveId}/items/${index}`
   );
 
-  return response.data;
+  return {
+    ...response.data,
+    items: normalizeRetrospectiveItems(response.data.items),
+  };
 }
 
 export async function listRetrospectiveTemplates() {
@@ -232,7 +253,7 @@ export async function applyRetrospectiveTemplate(
     id: String(response.data.id),
     applicationId: String(response.data.applicationId),
     stageId: response.data.stageId === null ? null : String(response.data.stageId),
-    items: response.data.items,
+    items: normalizeRetrospectiveItems(response.data.items),
     createdAt: response.data.createdAt,
     updatedAt: response.data.updatedAt,
   };

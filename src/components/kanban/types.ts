@@ -19,7 +19,7 @@ export interface KanbanCard {
   company: string;
   position: string;
   appliedDate: string; // 'M/D' 형식
-  appliedAt?: string;
+  appliedAt?: string | null;
   deadlineAt?: string | null;
   stageId: string;
   tags: Tag[];
