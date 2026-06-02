@@ -1,16 +1,27 @@
 import styles from './MailList.module.scss';
 import type { MailThread } from '../types';
+import type { MailIntegration } from '@/features/mail/api/mail';
 
 interface MailListProps {
   threads: MailThread[];
-  activeId: string;
+  activeId: string | null;
+  integrations: MailIntegration[];
+  isLoading: boolean;
+  errorMessage: string | null;
   onSelect: (id: string) => void;
+  onOpenMailSettings: () => void;
+  onDisconnect: (integrationId: number) => void;
 }
 
 export default function MailList({
   threads,
   activeId,
+  integrations,
+  isLoading,
+  errorMessage,
   onSelect,
+  onOpenMailSettings,
+  onDisconnect,
 }: MailListProps) {
   return (
     <section className={styles.panel} aria-labelledby='mail-list-heading'>
@@ -19,8 +30,48 @@ export default function MailList({
           <h2 id='mail-list-heading'>최근 메일</h2>
         </header>
 
+        <div className={styles.integrationBox}>
+          <div className={styles.integrationHeader}>
+            <strong>메일 계정</strong>
+            <span>{integrations.length > 0 ? `${integrations.length}개 연결됨` : '미연결'}</span>
+          </div>
+
+          {integrations.length > 0 ? (
+            <div className={styles.integrationList}>
+              {integrations.map((integration) => (
+                <div key={integration.id} className={styles.integrationItem}>
+                  <span>{integration.provider}</span>
+                  <strong>{integration.accountEmail}</strong>
+                  <button
+                    type='button'
+                    onClick={() => onDisconnect(integration.id)}
+                  >
+                    해제
+                  </button>
+                </div>
+              ))}
+            </div>
+          ) : null}
+
+          {integrations.length === 0 ? (
+            <button
+              type='button'
+              className={styles.connectMailButton}
+              onClick={onOpenMailSettings}
+            >
+              메일 연결하기
+            </button>
+          ) : null}
+        </div>
+
         <div className={styles.list}>
-          {threads.map((thread) => {
+          {isLoading ? (
+            <p className={styles.stateText}>메일을 불러오는 중입니다.</p>
+          ) : errorMessage ? (
+            <p className={styles.stateText}>{errorMessage}</p>
+          ) : threads.length === 0 ? (
+            <p className={styles.stateText}>분류된 채용 메일이 없습니다.</p>
+          ) : threads.map((thread) => {
             const isActive = thread.id === activeId;
 
             return (

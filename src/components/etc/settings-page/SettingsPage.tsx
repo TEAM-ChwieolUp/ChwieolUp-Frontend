@@ -3,18 +3,20 @@
 import {
   BellRing,
   CircleAlert,
-  KeyRound,
-  LockKeyhole,
   Mail,
   Mailbox,
-  MonitorSmartphone,
-  Shield,
   Sparkles,
   UserRound,
 } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useId, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import {
+  disconnectMailIntegration,
+  getMailAuthorizationUrl,
+  listMailIntegrations,
+  mailKeys,
+} from '@/features/mail/api/mail';
 import { getMyProfile, userProfileKeys } from '@/features/user/api/profile';
 import { ApiError } from '@/lib/api';
 import styles from './SettingsPage.module.scss';
@@ -31,11 +33,6 @@ const categories = [
     icon: Mail,
   },
   {
-    id: 'security',
-    label: '계정 보안',
-    icon: Shield,
-  },
-  {
     id: 'notifications',
     label: '알림 설정',
     icon: BellRing,
@@ -49,8 +46,7 @@ export default function SettingsPage() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const [gmailEnabled, setGmailEnabled] = useState(true);
-  const [outlookEnabled, setOutlookEnabled] = useState(false);
+  const queryClient = useQueryClient();
   const [sensitivity, setSensitivity] = useState(75);
   const [interviewAlerts, setInterviewAlerts] = useState(true);
   const [deadlineAlerts, setDeadlineAlerts] = useState(true);
@@ -65,6 +61,41 @@ export default function SettingsPage() {
     queryKey: userProfileKeys.me,
     queryFn: getMyProfile,
   });
+  const {
+    data: mailIntegrations = [],
+    isLoading: isMailIntegrationsLoading,
+    isError: isMailIntegrationsError,
+    error: mailIntegrationsError,
+  } = useQuery({
+    queryKey: mailKeys.integrations,
+    queryFn: listMailIntegrations,
+  });
+  const gmailIntegration = mailIntegrations.find(
+    (integration) => integration.provider === 'GOOGLE'
+  );
+  const connectGmailMutation = useMutation({
+    mutationFn: () => getMailAuthorizationUrl('google'),
+    onSuccess: (authorizationUrl) => {
+      window.location.assign(authorizationUrl);
+    },
+    onError: (error) => {
+      window.alert(
+        getErrorMessage(error, 'Gmail 연동 URL을 가져오지 못했습니다.')
+      );
+    },
+  });
+  const disconnectGmailMutation = useMutation({
+    mutationFn: disconnectMailIntegration,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: mailKeys.integrations });
+      await queryClient.invalidateQueries({ queryKey: mailKeys.all });
+    },
+    onError: (error) => {
+      window.alert(
+        getErrorMessage(error, 'Gmail 연동 해제 중 오류가 발생했습니다.')
+      );
+    },
+  });
 
   const profileName = profile?.name ?? '사용자';
   const profileInitial = profileName.trim().slice(0, 1).toUpperCase() || '?';
@@ -76,16 +107,27 @@ export default function SettingsPage() {
       ? (requestedTab as CategoryId)
       : 'profile';
 
+  function getErrorMessage(error: unknown, fallback: string) {
+    if (error instanceof ApiError) {
+      return error.message;
+    }
+
+    if (error instanceof Error) {
+      return error.message;
+    }
+
+    return fallback;
+  }
+
   function getProfileErrorMessage() {
-    if (profileError instanceof ApiError) {
-      return profileError.message;
-    }
+    return getErrorMessage(profileError, '프로필 정보를 불러오지 못했습니다.');
+  }
 
-    if (profileError instanceof Error) {
-      return profileError.message;
-    }
-
-    return '프로필 정보를 불러오지 못했습니다.';
+  function getMailIntegrationsErrorMessage() {
+    return getErrorMessage(
+      mailIntegrationsError,
+      '메일 연동 정보를 불러오지 못했습니다.'
+    );
   }
 
   function handleCategoryChange(categoryId: CategoryId) {
@@ -166,7 +208,7 @@ export default function SettingsPage() {
       <section className={styles.sectionCard}>
         <header className={styles.sectionHeader}>
           <h2>메일 연동 설정</h2>
-          <p>지원 현황을 자동으로 추적하기 위해 메일함을 연동하세요.</p>
+          <p>지원 현황을 자동으로 추적하기 위해 Gmail 계정을 연동하세요.</p>
         </header>
 
         <div className={styles.integrationList}>
@@ -178,44 +220,41 @@ export default function SettingsPage() {
 
               <div className={styles.integrationCopy}>
                 <strong>Gmail 연동</strong>
-                <p>지원 관련 메일을 자동으로 분석합니다.</p>
+                <p>
+                  {gmailIntegration
+                    ? `${gmailIntegration.accountEmail} 계정이 연결되어 있습니다.`
+                    : '지원 관련 메일을 자동으로 분석합니다.'}
+                </p>
               </div>
             </div>
 
-            <button
-              type='button'
-              aria-pressed={gmailEnabled}
-              aria-label='Gmail 연동 토글'
-              className={`${styles.toggle} ${gmailEnabled ? styles.enabled : ''}`}
-              onClick={() => setGmailEnabled((current) => !current)}
-            >
-              <span className={styles.toggleThumb} />
-            </button>
-          </article>
-
-          <article className={styles.integrationRow}>
-            <div className={styles.integrationMeta}>
-              <span className={styles.integrationIcon} aria-hidden='true'>
-                <Mail />
-              </span>
-
-              <div className={styles.integrationCopy}>
-                <strong>Outlook 연동</strong>
-                <p>Microsoft 계정의 채용 안내 메일을 수집합니다.</p>
-              </div>
-            </div>
-
-            <button
-              type='button'
-              aria-pressed={outlookEnabled}
-              aria-label='Outlook 연동 토글'
-              className={`${styles.toggle} ${outlookEnabled ? styles.enabled : ''}`}
-              onClick={() => setOutlookEnabled((current) => !current)}
-            >
-              <span className={styles.toggleThumb} />
-            </button>
+            {gmailIntegration ? (
+              <button
+                type='button'
+                className={styles.inlineAction}
+                onClick={() => disconnectGmailMutation.mutate(gmailIntegration.id)}
+                disabled={disconnectGmailMutation.isPending}
+              >
+                {disconnectGmailMutation.isPending ? '해제 중' : '연동 해제'}
+              </button>
+            ) : (
+              <button
+                type='button'
+                className={styles.inlineActionPrimary}
+                onClick={() => connectGmailMutation.mutate()}
+                disabled={isMailIntegrationsLoading || connectGmailMutation.isPending}
+              >
+                {connectGmailMutation.isPending ? '연결 중' : 'Gmail 연동하기'}
+              </button>
+            )}
           </article>
         </div>
+
+        {isMailIntegrationsError ? (
+          <div className={styles.profileNotice}>
+            <p>{getMailIntegrationsErrorMessage()}</p>
+          </div>
+        ) : null}
       </section>
 
       <section className={styles.sectionCard}>
@@ -268,103 +307,6 @@ export default function SettingsPage() {
         </button>
         <button type='button' className={styles.primaryButton}>
           설정 저장하기
-        </button>
-      </div>
-    </>
-  );
-
-  const renderSecurityContent = () => (
-    <>
-      <section className={styles.sectionCard}>
-        <header className={styles.sectionHeader}>
-          <h2>계정 보안</h2>
-          <p>
-            취업 준비 기록과 연동된 메일 데이터를 안전하게 보호하기 위한 보안
-            설정입니다.
-          </p>
-        </header>
-
-        <div className={styles.securityList}>
-          <article className={styles.securityItem}>
-            <span className={styles.infoPanelIcon} aria-hidden='true'>
-              <KeyRound />
-            </span>
-            <div className={styles.securityCopy}>
-              <strong>비밀번호 관리</strong>
-              <p>
-                최근 90일 동안 비밀번호를 변경하지 않았습니다. 주기적으로 새
-                비밀번호로 갱신하는 것을 권장합니다.
-              </p>
-            </div>
-            <button type='button' className={styles.inlineAction}>
-              비밀번호 변경
-            </button>
-          </article>
-
-          <article className={styles.securityItem}>
-            <span className={styles.infoPanelIcon} aria-hidden='true'>
-              <LockKeyhole />
-            </span>
-            <div className={styles.securityCopy}>
-              <strong>2단계 인증</strong>
-              <p>
-                새 기기 로그인 시 이메일 인증 또는 OTP 인증을 추가로 요구합니다.
-              </p>
-            </div>
-            <button type='button' className={styles.inlineActionPrimary}>
-              활성화하기
-            </button>
-          </article>
-
-          <article className={styles.securityItem}>
-            <span className={styles.infoPanelIcon} aria-hidden='true'>
-              <MonitorSmartphone />
-            </span>
-            <div className={styles.securityCopy}>
-              <strong>로그인 세션</strong>
-              <p>
-                현재 MacBook Safari와 iPhone Chrome에서 로그인되어 있습니다.
-                의심스러운 세션은 즉시 종료하세요.
-              </p>
-            </div>
-            <button type='button' className={styles.inlineAction}>
-              세션 관리
-            </button>
-          </article>
-        </div>
-      </section>
-
-      <section className={styles.sectionCard}>
-        <header className={styles.sectionHeader}>
-          <h2>보안 권장 상태</h2>
-          <p>
-            현재 계정은 기본 보호 수준입니다. 아래 권장 항목을 완료하면 더
-            안전해집니다.
-          </p>
-        </header>
-
-        <div className={styles.checkList}>
-          <div className={styles.checkItem}>
-            <span className={styles.checkDot} aria-hidden='true' />
-            <p>2단계 인증 활성화</p>
-          </div>
-          <div className={styles.checkItem}>
-            <span className={styles.checkDot} aria-hidden='true' />
-            <p>메일 연동 권한 재검토</p>
-          </div>
-          <div className={styles.checkItem}>
-            <span className={styles.checkDot} aria-hidden='true' />
-            <p>지난 로그인 기기 점검</p>
-          </div>
-        </div>
-      </section>
-
-      <div className={styles.actionBar}>
-        <button type='button' className={styles.ghostButton}>
-          나중에
-        </button>
-        <button type='button' className={styles.primaryButton}>
-          보안 설정 저장
         </button>
       </div>
     </>
@@ -490,8 +432,6 @@ export default function SettingsPage() {
     switch (activeCategory) {
       case 'profile':
         return renderProfileContent();
-      case 'security':
-        return renderSecurityContent();
       case 'notifications':
         return renderNotificationContent();
       case 'mail-sync':
@@ -529,24 +469,6 @@ export default function SettingsPage() {
 
         <div className={styles.contentColumn}>{renderContent()}</div>
       </div>
-
-      <aside className={styles.statusCard}>
-        <div className={styles.statusHeader}>
-          <span className={styles.statusDot} aria-hidden='true' />
-          <span>시스템 상태</span>
-        </div>
-
-        <p className={styles.statusText}>
-          마지막 동기화: <strong>12분 전</strong>
-          <br />
-          AI가 최근 24시간 동안 <strong>4개</strong>의 새 채용 일정을
-          발견했습니다.
-        </p>
-
-        <div className={styles.statusBar} aria-hidden='true'>
-          <span />
-        </div>
-      </aside>
     </section>
   );
 }
