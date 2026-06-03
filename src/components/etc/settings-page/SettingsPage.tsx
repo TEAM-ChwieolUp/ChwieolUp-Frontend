@@ -3,6 +3,7 @@
 import {
   BellRing,
   CircleAlert,
+  FileText,
   Mail,
   Mailbox,
   Sparkles,
@@ -36,6 +37,11 @@ const categories = [
     id: 'notifications',
     label: '알림 설정',
     icon: BellRing,
+  },
+  {
+    id: 'terms',
+    label: '개인정보 약관',
+    icon: FileText,
   },
 ] as const;
 
@@ -428,12 +434,117 @@ export default function SettingsPage() {
     </>
   );
 
+  const renderTermsContent = () => (
+    <>
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionHeader}>
+          <h2>개인정보 처리방침</h2>
+          <p>
+            취얼업은 사용자의 취업 준비 정보를 안전하게 관리하기 위해 필요한
+            범위에서만 개인정보를 처리합니다.
+          </p>
+        </header>
+
+        <div className={styles.termsBody}>
+          <article className={styles.termsBlock}>
+            <h3>1. 수집하는 개인정보</h3>
+            <p>
+              취얼업은 OAuth 로그인 과정에서 제공되는 이름, 이메일, 프로필
+              이미지와 사용자가 직접 등록한 지원 회사, 직무, 일정, 태그, 메모
+              정보를 수집할 수 있습니다. Gmail 연동을 선택한 경우 채용 관련
+              메일을 식별하기 위한 메일 제목, 발신자, 수신 시각, 본문 일부를
+              분석할 수 있습니다.
+            </p>
+          </article>
+
+          <article className={styles.termsBlock}>
+            <h3>2. 개인정보 이용 목적</h3>
+            <p>
+              수집한 정보는 계정 식별, 지원 현황 관리, 일정 알림, 메일 기반
+              채용 이벤트 분석, 사용자 맞춤형 대시보드 제공, 서비스 품질 개선을
+              위해 사용됩니다. 이용 목적과 관계없는 광고성 활용이나 제3자 판매는
+              하지 않습니다.
+            </p>
+          </article>
+
+          <article className={styles.termsBlock}>
+            <h3>3. 보관 및 파기</h3>
+            <p>
+              개인정보는 회원 탈퇴 또는 연동 해제 요청 시 지체 없이 삭제하는
+              것을 원칙으로 합니다. 다만 법령상 보관 의무가 있거나 분쟁 대응을
+              위해 필요한 정보는 정해진 기간 동안 분리 보관 후 파기합니다.
+            </p>
+          </article>
+
+          <article className={styles.termsBlock}>
+            <h3>4. 이용자의 권리</h3>
+            <p>
+              사용자는 언제든지 본인의 개인정보 열람, 정정, 삭제, 처리 정지를
+              요청할 수 있습니다. 메일 연동은 설정 화면에서 해제할 수 있으며,
+              해제 후에는 신규 메일 분석이 중단됩니다.
+            </p>
+          </article>
+        </div>
+      </section>
+
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionHeader}>
+          <h2>서비스 약관</h2>
+          <p>
+            취얼업을 이용할 때 적용되는 기본적인 서비스 이용 조건입니다.
+          </p>
+        </header>
+
+        <div className={styles.termsBody}>
+          <article className={styles.termsBlock}>
+            <h3>1. 서비스의 목적</h3>
+            <p>
+              취얼업은 사용자가 채용 공고, 지원 단계, 일정, 회고를 한 곳에서
+              관리하도록 돕는 취업 준비 보조 서비스입니다. 서비스에서 제공하는
+              분석과 알림은 의사결정을 보조하기 위한 정보이며, 채용 결과를
+              보장하지 않습니다.
+            </p>
+          </article>
+
+          <article className={styles.termsBlock}>
+            <h3>2. 회원의 책임</h3>
+            <p>
+              사용자는 정확한 정보를 입력하고 본인의 계정을 안전하게 관리해야
+              합니다. 타인의 계정을 사용하거나 허위 정보, 불법 콘텐츠, 악성
+              데이터를 등록해서는 안 됩니다.
+            </p>
+          </article>
+
+          <article className={styles.termsBlock}>
+            <h3>3. 외부 서비스 연동</h3>
+            <p>
+              Gmail 등 외부 서비스 연동은 사용자의 동의에 따라 이루어집니다.
+              외부 서비스의 장애, 정책 변경, 권한 만료로 인해 일부 기능이
+              제한될 수 있으며 사용자는 언제든지 연동을 해제할 수 있습니다.
+            </p>
+          </article>
+
+          <article className={styles.termsBlock}>
+            <h3>4. 서비스 변경 및 중단</h3>
+            <p>
+              취얼업은 기능 개선, 보안 점검, 시스템 장애 대응을 위해 서비스
+              일부를 변경하거나 일시 중단할 수 있습니다. 중요한 변경 사항은
+              가능한 범위에서 사전에 안내합니다.
+            </p>
+          </article>
+        </div>
+      </section>
+    </>
+  );
+
   const renderContent = () => {
     switch (activeCategory) {
       case 'profile':
         return renderProfileContent();
       case 'notifications':
         return renderNotificationContent();
+      case 'terms':
+        return renderTermsContent();
       case 'mail-sync':
       default:
         return renderMailSyncContent();
