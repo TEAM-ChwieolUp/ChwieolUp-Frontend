@@ -3,7 +3,8 @@
 import { Bell, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Manrope } from 'next/font/google';
-import { logoutSession } from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import { LOGIN_ROUTE, logoutSession } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import styles from './Header.module.scss';
     
@@ -28,6 +29,7 @@ const notifications = [
 ];
 
 export default function Header() {
+  const router = useRouter();
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const [openModalState, setOpenModalState] = useState<{
     kind: 'notifications' | 'profile';
@@ -38,6 +40,12 @@ export default function Header() {
   const profileName = user?.name ?? '게스트 사용자';
   const profileSubtext = user?.email ?? '세션을 확인 중입니다.';
   const profileInitial = profileName.trim().slice(0, 1).toUpperCase();
+
+  function handleLogout() {
+    setOpenModalState(null);
+    logoutSession();
+    router.replace(LOGIN_ROUTE);
+  }
 
   useEffect(() => {
     if (openModal === null) {
@@ -217,7 +225,7 @@ export default function Header() {
                 <button
                   type='button'
                   className={styles.logoutButton}
-                  onClick={() => logoutSession()}
+                  onClick={handleLogout}
                 >
                   로그아웃
                 </button>

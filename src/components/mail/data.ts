@@ -63,6 +63,7 @@ export const mailRecords: MailRecord[] = [
         '토스페이먼츠 채용팀 드림',
       ],
     },
+    aiSummary: '채용 메일 분석 결과',
     aiActions: [
       {
         id: 'kanban',
@@ -137,6 +138,7 @@ export const mailRecords: MailRecord[] = [
       },
       closingLines: ['좋은 결과가 이어질 수 있도록 계속 지원 현황을 관리해 보세요.'],
     },
+    aiSummary: '채용 메일 분석 결과',
     aiActions: [
       {
         id: 'kanban-linkedin',
@@ -202,6 +204,7 @@ export const mailRecords: MailRecord[] = [
       },
       closingLines: ['질문이 있으시면 본 메일에 답장 주시면 빠르게 안내드리겠습니다.'],
     },
+    aiSummary: '채용 메일 분석 결과',
     aiActions: [
       {
         id: 'calendar-woowa',
@@ -263,6 +266,7 @@ export const mailRecords: MailRecord[] = [
       },
       closingLines: ['관심 가져 주셔서 감사드리며, 좋은 소식으로 다시 연락드리겠습니다.'],
     },
+    aiSummary: '채용 메일 분석 결과',
     aiActions: [
       {
         id: 'kanban-google',

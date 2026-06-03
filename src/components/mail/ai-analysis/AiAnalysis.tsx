@@ -4,9 +4,10 @@ import type { MailAiAction } from '../types';
 
 interface AiAnalysisProps {
   actions: MailAiAction[];
+  summary: string;
 }
 
-export default function AiAnalysis({ actions }: AiAnalysisProps) {
+export default function AiAnalysis({ actions, summary }: AiAnalysisProps) {
   return (
     <section className={styles.section} aria-labelledby='mail-ai-analysis-heading'>
       <header className={styles.header}>
@@ -17,12 +18,16 @@ export default function AiAnalysis({ actions }: AiAnalysisProps) {
         <div className={styles.titleGroup}>
           <h2 id='mail-ai-analysis-heading'>AI 분석</h2>
           <span className={styles.divider}>-</span>
-          <strong>서류 합격 감지</strong>
+          <strong>{summary}</strong>
         </div>
       </header>
 
       <div className={styles.grid}>
-        {actions.map((action) => {
+        {actions.length === 0 ? (
+          <article className={styles.emptyCard}>
+            채용 관련 추천 액션이 아직 없습니다.
+          </article>
+        ) : actions.map((action) => {
           const Icon = action.icon === 'kanban' ? KanbanSquare : CalendarDays;
           const toneLabel =
             action.icon === 'kanban' ? '진행 단계 추천' : '일정 자동 감지';
