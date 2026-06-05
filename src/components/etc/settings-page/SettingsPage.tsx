@@ -10,7 +10,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useId, useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   disconnectMailIntegration,
@@ -80,7 +80,7 @@ export default function SettingsPage() {
     (integration) => integration.provider === 'GOOGLE'
   );
   const connectGmailMutation = useMutation({
-    mutationFn: () => getMailAuthorizationUrl('google'),
+    mutationFn: () => getMailAuthorizationUrl('google', '/more?tab=mail-sync'),
     onSuccess: (authorizationUrl) => {
       window.location.assign(authorizationUrl);
     },
@@ -112,6 +112,32 @@ export default function SettingsPage() {
     requestedTab && categories.some((category) => category.id === requestedTab)
       ? (requestedTab as CategoryId)
       : 'profile';
+  const mailOAuthError = searchParams.get('mail_oauth_error');
+
+  useEffect(() => {
+    if (!mailOAuthError) {
+      return;
+    }
+
+    const errorMessages: Record<string, string> = {
+      access_denied: 'Gmail 연동이 취소되었습니다.',
+      already_connected: '이미 연동된 Gmail 계정이 있습니다.',
+    };
+
+    const message =
+      errorMessages[mailOAuthError] ??
+      'Gmail 연동 중 오류가 발생했습니다. 다시 시도해주세요.';
+
+    window.alert(message);
+
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('mail_oauth_error');
+    const cleanQuery = next.toString();
+    router.replace(
+      `${pathname}${cleanQuery ? `?${cleanQuery}` : ''}`,
+      { scroll: false }
+    );
+  }, [mailOAuthError, pathname, router, searchParams]);
 
   function getErrorMessage(error: unknown, fallback: string) {
     if (error instanceof ApiError) {
