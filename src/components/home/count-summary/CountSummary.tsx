@@ -65,8 +65,8 @@ export default function CountSummary() {
 
     return {
       totalCount: String(total),
-      inProgressCount,
-      completedCount,
+      inProgressCount: inProgress,
+      completedCount: completed,
       retroRate: rate,
     };
   }, [boardQuery.data]);
