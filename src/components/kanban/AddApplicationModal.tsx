@@ -26,6 +26,7 @@ const EMPTY_FORM: KanbanFormValues = {
   company: '',
   position: '',
   appliedDate: '',
+  deadlineAt: '',
   stageId: '',
   tags: [],
   nextAction: '',
@@ -77,6 +78,7 @@ export default function AddApplicationModal({
         company: card.company,
         position: card.position,
         appliedDate: toInputDate(card.appliedAt ?? card.appliedDate),
+        deadlineAt: toInputDate(card.deadlineAt ?? undefined),
         stageId: card.stageId,
         tags: card.tags,
         nextAction: card.nextAction ?? '',
@@ -146,6 +148,7 @@ export default function AddApplicationModal({
         position: form.position.trim(),
         appliedDate: formatDate(form.appliedDate),
         appliedAt: form.appliedDate,
+        deadlineAt: form.deadlineAt || null,
         stageId: form.stageId,
         tags: form.tags,
         nextAction: form.nextAction.trim() || undefined,
@@ -190,6 +193,10 @@ export default function AddApplicationModal({
           <span className={styles.metaItem}>
             <CalendarDays size={14} />
             지원일 {form.appliedDate ? formatDate(form.appliedDate) : '미입력'}
+          </span>
+          <span className={styles.metaItem}>
+            <CalendarDays size={14} />
+            마감일 {form.deadlineAt ? formatDate(form.deadlineAt) : '미지정'}
           </span>
           <span className={styles.metaItem}>
             <TagIcon size={14} />
@@ -245,6 +252,29 @@ export default function AddApplicationModal({
             </div>
 
             <div className={styles.field}>
+              <div className={styles.labelRow}>
+                <label className={styles.label} htmlFor="deadlineAt">마감일</label>
+                <button
+                  type="button"
+                  className={styles.clearDateBtn}
+                  onClick={() => handleChange('deadlineAt', '')}
+                  disabled={!form.deadlineAt || isSaving}
+                >
+                  미지정
+                </button>
+              </div>
+              <input
+                id="deadlineAt"
+                className={styles.input}
+                type="date"
+                value={form.deadlineAt}
+                onChange={(e) => handleChange('deadlineAt', e.target.value)}
+              />
+            </div>
+          </div>
+
+          <div className={styles.grid}>
+            <div className={`${styles.field} ${styles.fieldWide}`}>
               <label className={styles.label} htmlFor="stage">진행 단계</label>
               <div className={styles.stageSelect}>
                 <select
