@@ -113,6 +113,8 @@ export default function SettingsPage() {
       ? (requestedTab as CategoryId)
       : 'profile';
   const mailOAuthError = searchParams.get('mail_oauth_error');
+  const mailOAuthConnected = searchParams.get('mail_oauth_connected') === '1';
+  const [showConnectedNotice, setShowConnectedNotice] = useState(mailOAuthConnected);
 
   useEffect(() => {
     if (!mailOAuthError) {
@@ -138,6 +140,20 @@ export default function SettingsPage() {
       { scroll: false }
     );
   }, [mailOAuthError, pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!mailOAuthConnected) {
+      return;
+    }
+
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('mail_oauth_connected');
+    const cleanQuery = next.toString();
+    router.replace(
+      `${pathname}${cleanQuery ? `?${cleanQuery}` : ''}`,
+      { scroll: false }
+    );
+  }, [mailOAuthConnected, pathname, router, searchParams]);
 
   function getErrorMessage(error: unknown, fallback: string) {
     if (error instanceof ApiError) {
@@ -281,6 +297,21 @@ export default function SettingsPage() {
             )}
           </article>
         </div>
+
+        {showConnectedNotice && (
+          <div className={styles.profileNotice}>
+            <p>
+              Gmail 계정이 성공적으로 연동되었습니다.{' '}
+              <button
+                type='button'
+                style={{ background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                onClick={() => setShowConnectedNotice(false)}
+              >
+                닫기
+              </button>
+            </p>
+          </div>
+        )}
 
         {isMailIntegrationsError ? (
           <div className={styles.profileNotice}>
