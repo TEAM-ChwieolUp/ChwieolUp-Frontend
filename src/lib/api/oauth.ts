@@ -1,7 +1,7 @@
 import {
-  API_BASE_URL,
   GOOGLE_OAUTH_START_ENDPOINT,
   KAKAO_OAUTH_START_ENDPOINT,
+  OAUTH_BASE_URL,
 } from './config';
 
 export type OAuthProvider = 'google' | 'kakao';
@@ -18,7 +18,7 @@ function getOAuthStartUrl(provider: OAuthProvider) {
     return path;
   }
 
-  return `${API_BASE_URL}${path}`;
+  return `${OAUTH_BASE_URL}${path}`;
 }
 
 export function startSocialLogin(provider: OAuthProvider) {

@@ -320,7 +320,7 @@ export default function KanbanBoard() {
       companyName: card.company,
       position: card.position,
       appliedAt: toApiDate(card.appliedAt ?? card.appliedDate),
-      deadlineAt: card.deadlineAt ?? null,
+      deadlineAt: card.deadlineAt ? toApiDate(card.deadlineAt) : null,
       noResponseDays: card.noResponseDays,
       priority: card.priority ?? 'NORMAL',
       memo: card.memo ?? '',
@@ -430,7 +430,9 @@ export default function KanbanBoard() {
           companyName: draggedCard.company,
           position: draggedCard.position,
           appliedAt: toApiDate(draggedCard.appliedAt ?? draggedCard.appliedDate),
-          deadlineAt: draggedCard.deadlineAt ?? null,
+          deadlineAt: draggedCard.deadlineAt
+            ? toApiDate(draggedCard.deadlineAt)
+            : null,
           noResponseDays: draggedCard.noResponseDays,
           priority: draggedCard.priority ?? 'NORMAL',
           memo: draggedCard.memo ?? '',

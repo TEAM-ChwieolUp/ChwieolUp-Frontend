@@ -480,7 +480,7 @@ export default function RetroView() {
           <p className={styles.pageSubtitle}>지원 카드별 질문과 답변을 회고로 남겨보세요</p>
         </div>
         <button className={styles.writeBtn} onClick={openWrite}>
-          <Plus size={15} />
+          <Plus size={16} />
           회고 작성
         </button>
       </div>

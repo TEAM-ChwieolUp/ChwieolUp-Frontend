@@ -92,6 +92,14 @@ export function notifyAuthFailure() {
   defaultAuthFailureHandler();
 }
 
+function clearLegacyAuthCookie() {
+  if (typeof document === 'undefined') {
+    return;
+  }
+
+  document.cookie = `${LEGACY_AUTH_COOKIE}=; path=/; max-age=0; samesite=lax`;
+}
+
 export async function refreshAccessToken() {
   if (!refreshPromise) {
     refreshPromise = requestRefreshToken().finally(() => {
@@ -126,5 +134,6 @@ export async function bootstrapSession() {
 }
 
 export function logoutSession() {
-  notifyAuthFailure();
+  clearAuthSession();
+  clearLegacyAuthCookie();
 }

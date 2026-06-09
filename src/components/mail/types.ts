@@ -51,4 +51,5 @@ export interface MailRecord {
   thread: MailThread;
   detail: MailDetailData;
   aiActions: MailAiAction[];
+  aiSummary: string;
 }

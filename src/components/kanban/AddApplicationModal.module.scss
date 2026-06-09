@@ -40,7 +40,7 @@
 .modalEyebrow {
   font-size: 0.75rem;
   font-weight: 700;
-  color: #6366f1;
+  color: #3b82f6;
 }
 
 .modalTitle {
@@ -103,8 +103,8 @@
 }
 
 .metaChip {
-  background: #eef2ff;
-  color: #4f46e5;
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 .metaItem {
@@ -154,10 +154,35 @@
   gap: 8px;
 }
 
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
 .label {
   font-size: 0.82rem;
   font-weight: 700;
   color: #475569;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.clearDateBtn {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    color: #94a3b8;
+    cursor: default;
+  }
 }
 
 .input,
@@ -180,8 +205,8 @@
   }
 
   &:focus {
-    border-color: #6366f1;
-    box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.12);
   }
 }
 
@@ -229,12 +254,12 @@
 }
 
 .tagBtnActive {
-  background: #4f46e5;
-  border-color: #4f46e5;
+  background: #3b82f6;
+  border-color: #3b82f6;
   color: #ffffff;
 
   &:hover {
-    background: #4338ca;
+    background: #2563eb;
   }
 }
 
@@ -246,10 +271,10 @@
 .addTagBtn {
   flex-shrink: 0;
   padding: 0 16px;
-  border: 1px solid #c7d2fe;
+  border: 1px solid #bfdbfe;
   border-radius: 12px;
-  background: #eef2ff;
-  color: #4338ca;
+  background: #eff6ff;
+  color: #2563eb;
   font-size: 0.86rem;
   font-weight: 700;
   cursor: pointer;
@@ -300,9 +325,9 @@
 }
 
 .resultBtnActive {
-  border-color: #6366f1;
-  background: #eef2ff;
-  color: #4338ca;
+  border-color: #3b82f6;
+  background: #eff6ff;
+  color: #2563eb;
 }
 
 .footer {
@@ -344,7 +369,7 @@
   padding: 10px 22px;
   border: none;
   border-radius: 12px;
-  background: #4f46e5;
+  background: #3b82f6;
   color: #ffffff;
   font-size: 0.9rem;
   font-weight: 700;
@@ -352,7 +377,7 @@
   transition: background 0.15s ease;
 
   &:hover {
-    background: #4338ca;
+    background: #2563eb;
   }
 }
 
