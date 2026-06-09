@@ -1,9 +1,16 @@
 'use client';
 
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { Bell, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Manrope } from 'next/font/google';
 import { useRouter } from 'next/navigation';
+import {
+  listNotifications,
+  markAllNotificationsAsRead,
+  markNotificationAsRead,
+  notificationKeys,
+} from '@/features/notifications/api/notifications';
 import { LOGIN_ROUTE, logoutSession } from '@/lib/api';
 import { useAuthStore } from '@/store/auth-store';
 import styles from './Header.module.scss';
@@ -13,29 +20,80 @@ const manrope = Manrope({
   weight: ['500', '600', '700', '800'],
 });
 
-const notifications = [
-  {
-    title: 'AI 분석이 업데이트되었습니다.',
-    time: '방금 전',
-  },
-  {
-    title: '이번 주 지원 마감 일정이 2건 남아 있습니다.',
-    time: '10분 전',
-  },
-  {
-    title: '회고 작성이 필요한 항목이 1건 있습니다.',
-    time: '1시간 전',
-  },
-];
+function formatNotificationTime(value: string | null) {
+  if (!value) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return value;
+  }
+
+  const diffMs = Date.now() - date.getTime();
+  const diffMinutes = Math.max(0, Math.floor(diffMs / 60_000));
+
+  if (diffMinutes < 1) {
+    return '방금 전';
+  }
+
+  if (diffMinutes < 60) {
+    return `${diffMinutes}분 전`;
+  }
+
+  const diffHours = Math.floor(diffMinutes / 60);
+
+  if (diffHours < 24) {
+    return `${diffHours}시간 전`;
+  }
+
+  return new Intl.DateTimeFormat('ko-KR', {
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  }).format(date);
+}
 
 export default function Header() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const actionsRef = useRef<HTMLDivElement | null>(null);
   const [openModalState, setOpenModalState] = useState<{
     kind: 'notifications' | 'profile';
   } | null>(null);
   const openModal = openModalState?.kind ?? null;
   const user = useAuthStore((state) => state.user);
+  const authStatus = useAuthStore((state) => state.status);
+  const isAuthenticated = authStatus === 'authenticated';
+  const notificationsQuery = useQuery({
+    queryKey: notificationKeys.list,
+    queryFn: listNotifications,
+    enabled: isAuthenticated,
+  });
+  const notifications = notificationsQuery.data ?? [];
+  const unreadCount = notifications.filter((notification) => !notification.read).length;
+
+  const markReadMutation = useMutation({
+    mutationFn: markNotificationAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    },
+    onError: (error) => {
+      alert(error instanceof Error ? error.message : '알림 읽음 처리에 실패했습니다.');
+    },
+  });
+
+  const markAllReadMutation = useMutation({
+    mutationFn: markAllNotificationsAsRead,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    },
+    onError: (error) => {
+      alert(error instanceof Error ? error.message : '알림 전체 읽음 처리에 실패했습니다.');
+    },
+  });
 
   const profileName = user?.name ?? '게스트 사용자';
   const profileSubtext = user?.email ?? '세션을 확인 중입니다.';
@@ -99,7 +157,9 @@ export default function Header() {
             }
           >
             <Bell className={styles.actionIcon} aria-hidden='true' />
-            <span className={styles.notificationDot} aria-hidden='true' />
+            {unreadCount > 0 ? (
+              <span className={styles.notificationDot} aria-hidden='true' />
+            ) : null}
           </button>
 
           <button
@@ -141,29 +201,70 @@ export default function Header() {
                   알림
                 </h2>
 
-                <button
-                  className={styles.closeButton}
-                  type='button'
-                  aria-label='팝오버 닫기'
-                  onClick={() => setOpenModalState(null)}
-                >
-                  <X className={styles.closeIcon} aria-hidden='true' />
-                </button>
+                <div className={styles.popoverActions}>
+                  {unreadCount > 0 ? (
+                    <button
+                      className={styles.textButton}
+                      type='button'
+                      disabled={markAllReadMutation.isPending}
+                      onClick={() => markAllReadMutation.mutate()}
+                    >
+                      모두 읽음
+                    </button>
+                  ) : null}
+
+                  <button
+                    className={styles.closeButton}
+                    type='button'
+                    aria-label='팝오버 닫기'
+                    onClick={() => setOpenModalState(null)}
+                  >
+                    <X className={styles.closeIcon} aria-hidden='true' />
+                  </button>
+                </div>
               </div>
 
               <div className={styles.notificationList}>
+                {notificationsQuery.isPending ? (
+                  <p className={styles.notificationState}>알림을 불러오는 중입니다.</p>
+                ) : null}
+
+                {notificationsQuery.isError ? (
+                  <p className={styles.notificationState}>
+                    알림을 불러오지 못했습니다.
+                  </p>
+                ) : null}
+
+                {!notificationsQuery.isPending &&
+                !notificationsQuery.isError &&
+                notifications.length === 0 ? (
+                  <p className={styles.notificationState}>새 알림이 없습니다.</p>
+                ) : null}
+
                 {notifications.map((notification) => (
-                  <article
-                    key={`${notification.title}-${notification.time}`}
-                    className={styles.notificationItem}
+                  <button
+                    key={notification.id}
+                    type='button'
+                    className={`${styles.notificationItem} ${
+                      notification.read ? styles.notificationItemRead : ''
+                    }`}
+                    disabled={notification.read || markReadMutation.isPending}
+                    onClick={() => markReadMutation.mutate(notification.id)}
                   >
                     <strong className={styles.notificationTitle}>
                       {notification.title}
                     </strong>
+
+                    {notification.message && notification.message !== notification.title ? (
+                      <span className={styles.notificationMessage}>
+                        {notification.message}
+                      </span>
+                    ) : null}
+
                     <span className={styles.notificationTime}>
-                      {notification.time}
+                      {formatNotificationTime(notification.createdAt)}
                     </span>
-                  </article>
+                  </button>
                 ))}
               </div>
             </div>

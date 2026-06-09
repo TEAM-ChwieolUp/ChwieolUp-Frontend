@@ -624,6 +624,39 @@
     }
   }
 
+  .termsBody {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+  }
+
+  .termsBlock {
+    padding: 20px;
+    border: 1px solid #edf1f5;
+    border-radius: 16px;
+    background: #f9fbfd;
+
+    h3,
+    p {
+      margin: 0;
+      word-break: keep-all;
+    }
+
+    h3 {
+      color: #111827;
+      font-size: 15px;
+      font-weight: 700;
+      line-height: 22px;
+    }
+
+    p {
+      margin-top: 8px;
+      color: #4b5563;
+      font-size: 13px;
+      line-height: 21px;
+    }
+  }
+
   .actionBar {
     display: flex;
     align-items: center;

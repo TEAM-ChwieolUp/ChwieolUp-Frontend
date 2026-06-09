@@ -311,6 +311,38 @@
   font-weight: 700;
 }
 
+.popoverActions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.textButton {
+  min-height: 32px;
+  padding: 0 10px;
+  border: 0;
+  border-radius: 8px;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
 .closeButton {
   display: inline-flex;
   align-items: center;
@@ -334,15 +366,39 @@
   display: flex;
   flex-direction: column;
   gap: 10px;
+  max-height: min(420px, calc(100vh - 128px));
   padding: 14px 20px 20px;
+  overflow-y: auto;
 }
 
 .notificationItem {
   display: flex;
   flex-direction: column;
+  align-items: stretch;
   gap: 5px;
+  width: 100%;
   padding: 14px;
+  border: 1px solid #dbeafe;
   border-radius: 16px;
+  background: #eff6ff;
+  text-align: left;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    border-color: #bfdbfe;
+    background: #dbeafe;
+  }
+
+  &:disabled {
+    cursor: default;
+  }
+}
+
+.notificationItemRead {
+  border-color: #e2e8f0;
   background: #f8fafc;
 }
 
@@ -353,10 +409,27 @@
   line-height: 1.45;
 }
 
+.notificationMessage {
+  color: #334155;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 1.45;
+}
+
 .notificationTime {
   color: #64748b;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.notificationState {
+  margin: 0;
+  padding: 20px 8px;
+  color: #64748b;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1.5;
+  text-align: center;
 }
 
 @media (max-width: 960px) {

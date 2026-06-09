@@ -154,10 +154,35 @@
   gap: 8px;
 }
 
+.fieldWide {
+  grid-column: 1 / -1;
+}
+
 .label {
   font-size: 0.82rem;
   font-weight: 700;
   color: #475569;
+}
+
+.labelRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+}
+
+.clearDateBtn {
+  border: 0;
+  background: transparent;
+  color: #2563eb;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+
+  &:disabled {
+    color: #94a3b8;
+    cursor: default;
+  }
 }
 
 .input,
