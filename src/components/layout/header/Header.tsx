@@ -9,6 +9,7 @@ import {
   listNotifications,
   markAllNotificationsAsRead,
   markNotificationAsRead,
+  NotificationItem,
   notificationKeys,
 } from '@/features/notifications/api/notifications';
 import { LOGIN_ROUTE, logoutSession } from '@/lib/api';
@@ -77,21 +78,74 @@ export default function Header() {
 
   const markReadMutation = useMutation({
     mutationFn: markNotificationAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    onMutate: async (notificationId) => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.list });
+      const previousNotifications =
+        queryClient.getQueryData<NotificationItem[]>(notificationKeys.list);
+
+      queryClient.setQueryData<NotificationItem[]>(
+        notificationKeys.list,
+        (current = []) =>
+          current.map((notification) =>
+            notification.id === notificationId
+              ? { ...notification, read: true }
+              : notification
+          )
+      );
+
+      return { previousNotifications };
     },
-    onError: (error) => {
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: notificationKeys.list, type: 'active' });
+    },
+    onError: (error, _notificationId, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          notificationKeys.list,
+          context.previousNotifications
+        );
+      }
+
       alert(error instanceof Error ? error.message : '알림 읽음 처리에 실패했습니다.');
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 
   const markAllReadMutation = useMutation({
     mutationFn: markAllNotificationsAsRead,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: notificationKeys.all });
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: notificationKeys.list });
+      const previousNotifications =
+        queryClient.getQueryData<NotificationItem[]>(notificationKeys.list);
+
+      queryClient.setQueryData<NotificationItem[]>(
+        notificationKeys.list,
+        (current = []) =>
+          current.map((notification) => ({
+            ...notification,
+            read: true,
+          }))
+      );
+
+      return { previousNotifications };
     },
-    onError: (error) => {
+    onSuccess: async () => {
+      await queryClient.refetchQueries({ queryKey: notificationKeys.list, type: 'active' });
+    },
+    onError: (error, _variables, context) => {
+      if (context?.previousNotifications) {
+        queryClient.setQueryData(
+          notificationKeys.list,
+          context.previousNotifications
+        );
+      }
+
       alert(error instanceof Error ? error.message : '알림 전체 읽음 처리에 실패했습니다.');
+    },
+    onSettled: async () => {
+      await queryClient.invalidateQueries({ queryKey: notificationKeys.all });
     },
   });
 
