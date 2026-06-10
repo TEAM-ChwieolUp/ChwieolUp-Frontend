@@ -375,26 +375,23 @@
   display: flex;
   flex-direction: column;
   align-items: stretch;
-  gap: 5px;
+  gap: 8px;
   width: 100%;
   padding: 14px;
   border: 1px solid #dbeafe;
-  border-radius: 16px;
+  border-radius: 8px;
   background: #eff6ff;
   text-align: left;
-  cursor: pointer;
   transition:
     background-color 0.2s ease,
     border-color 0.2s ease;
+}
 
-  &:hover:not(:disabled) {
-    border-color: #bfdbfe;
-    background: #dbeafe;
-  }
-
-  &:disabled {
-    cursor: default;
-  }
+.notificationItemHeader {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
 .notificationItemRead {
@@ -409,6 +406,25 @@
   line-height: 1.45;
 }
 
+.notificationReadBadge {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  min-height: 22px;
+  padding: 0 8px;
+  border-radius: 999px;
+  background: #1d4ed8;
+  color: #ffffff;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1;
+}
+
+.notificationReadBadgeDone {
+  background: #e2e8f0;
+  color: #64748b;
+}
+
 .notificationMessage {
   color: #334155;
   font-size: 13px;
@@ -416,10 +432,55 @@
   line-height: 1.45;
 }
 
+.notificationFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
 .notificationTime {
   color: #64748b;
   font-size: 12px;
   line-height: 1.4;
+}
+
+.notificationReadButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  min-height: 28px;
+  padding: 0 9px;
+  border: 1px solid #bfdbfe;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1d4ed8;
+  font-size: 12px;
+  font-weight: 800;
+  line-height: 1;
+  white-space: nowrap;
+  cursor: pointer;
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease;
+
+  &:hover:not(:disabled) {
+    border-color: #93c5fd;
+    background: #dbeafe;
+    color: #1e40af;
+  }
+
+  &:disabled {
+    cursor: not-allowed;
+    opacity: 0.55;
+  }
+}
+
+.notificationReadIcon {
+  width: 13px;
+  height: 13px;
 }
 
 .notificationState {

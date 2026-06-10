@@ -1,7 +1,7 @@
 'use client';
 
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Bell, Search, X } from 'lucide-react';
+import { Bell, Check, Search, X } from 'lucide-react';
 import { useEffect, useRef, useState } from 'react';
 import { Manrope } from 'next/font/google';
 import { useRouter } from 'next/navigation';
@@ -242,18 +242,24 @@ export default function Header() {
                 ) : null}
 
                 {notifications.map((notification) => (
-                  <button
+                  <article
                     key={notification.id}
-                    type='button'
                     className={`${styles.notificationItem} ${
                       notification.read ? styles.notificationItemRead : ''
                     }`}
-                    disabled={notification.read || markReadMutation.isPending}
-                    onClick={() => markReadMutation.mutate(notification.id)}
                   >
-                    <strong className={styles.notificationTitle}>
-                      {notification.title}
-                    </strong>
+                    <div className={styles.notificationItemHeader}>
+                      <strong className={styles.notificationTitle}>
+                        {notification.title}
+                      </strong>
+                      <span
+                        className={`${styles.notificationReadBadge} ${
+                          notification.read ? styles.notificationReadBadgeDone : ''
+                        }`}
+                      >
+                        {notification.read ? '읽음' : '안 읽음'}
+                      </span>
+                    </div>
 
                     {notification.message && notification.message !== notification.title ? (
                       <span className={styles.notificationMessage}>
@@ -261,10 +267,27 @@ export default function Header() {
                       </span>
                     ) : null}
 
-                    <span className={styles.notificationTime}>
-                      {formatNotificationTime(notification.createdAt)}
-                    </span>
-                  </button>
+                    <div className={styles.notificationFooter}>
+                      <span className={styles.notificationTime}>
+                        {formatNotificationTime(notification.createdAt)}
+                      </span>
+
+                      {!notification.read ? (
+                        <button
+                          className={styles.notificationReadButton}
+                          type='button'
+                          disabled={
+                            markReadMutation.isPending &&
+                            markReadMutation.variables === notification.id
+                          }
+                          onClick={() => markReadMutation.mutate(notification.id)}
+                        >
+                          <Check className={styles.notificationReadIcon} aria-hidden='true' />
+                          읽음 처리
+                        </button>
+                      ) : null}
+                    </div>
+                  </article>
                 ))}
               </div>
             </div>
