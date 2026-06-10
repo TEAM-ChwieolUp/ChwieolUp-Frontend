@@ -23,7 +23,7 @@ import {
 import { ApiError } from '@/lib/api';
 import styles from '@/app/(dashboard)/mail/page.module.scss';
 
-const CLASSIFIED_MAIL_LIMIT = 60;
+const CLASSIFIED_MAIL_LIMIT = 20;
 
 function getApiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof ApiError) {
