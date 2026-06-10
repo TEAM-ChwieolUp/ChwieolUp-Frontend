@@ -43,8 +43,19 @@ interface TemplateListResponseData {
   templates: TemplateResponse[];
 }
 
+interface AiQuestionResponse {
+  category: string;
+  question: string;
+  reason: string;
+  priority: string;
+  sourceTemplateIds: string[];
+}
+
 interface AiQuestionsResponseData {
-  questions: string[];
+  questionSetTitle: string;
+  jobRole: string;
+  processStage: string;
+  questions: AiQuestionResponse[];
 }
 
 export interface CreateRetrospectivePayload {
@@ -220,6 +231,7 @@ export async function applyRetrospectiveTemplate(
 export async function generateAiRetrospectiveQuestions(payload: {
   applicationId: string;
   stageId?: string | null;
+  questionCount: number;
 }) {
   const response = await api.post<ApiSuccessResponse<AiQuestionsResponseData>>(
     '/api/retrospectives/ai-questions',
@@ -229,8 +241,9 @@ export async function generateAiRetrospectiveQuestions(payload: {
         payload.stageId === undefined || payload.stageId === null || payload.stageId === ''
           ? undefined
           : Number(payload.stageId),
+      questionCount: payload.questionCount,
     }
   );
 
-  return response.data.questions;
+  return response.data.questions.map((question) => question.question);
 }

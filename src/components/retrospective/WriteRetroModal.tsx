@@ -26,8 +26,14 @@ interface WriteRetroModalProps {
   onClose: () => void;
   onSave: (form: RetrospectiveEditorForm, retrospectiveId?: string) => Promise<void>;
   onApplyTemplate?: (retrospectiveId: string, templateId: string) => Promise<RetrospectiveItem[]>;
-  onGenerateAiQuestions: (applicationId: string, stageId?: string) => Promise<string[]>;
+  onGenerateAiQuestions: (
+    applicationId: string,
+    stageId: string | undefined,
+    questionCount: number
+  ) => Promise<string[]>;
 }
+
+const AI_QUESTION_COUNT = 2;
 
 function createEmptyItem(): RetrospectiveItem {
   return {
@@ -154,7 +160,8 @@ export default function WriteRetroModal({
       setIsGeneratingQuestions(true);
       const questions = await onGenerateAiQuestions(
         form.applicationId,
-        form.stageId || undefined
+        form.stageId || undefined,
+        AI_QUESTION_COUNT
       );
 
       setForm((prev) => ({

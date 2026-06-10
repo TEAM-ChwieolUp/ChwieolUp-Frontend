@@ -51,6 +51,20 @@ function getApiErrorMessage(error: unknown, fallback: string) {
   return fallback;
 }
 
+function getAiQuestionErrorMessage(error: unknown) {
+  if (error instanceof ApiError) {
+    if (error.status === 429) {
+      return 'AI 호출 한도를 넘었어요. 잠시 후 다시 시도해 주세요.';
+    }
+
+    if (error.status === 502 || error.status === 504) {
+      return 'AI 응답 생성에 실패했습니다. 다시 시도하거나 직접 질문을 입력하거나 템플릿을 사용해 보세요.';
+    }
+  }
+
+  return getApiErrorMessage(error, 'AI 질문 생성 중 오류가 발생했습니다.');
+}
+
 function mapSummaryWithContext(
   summary: {
     id: string;
@@ -442,16 +456,19 @@ export default function RetroView() {
     setShowWriteModal(true);
   }
 
-  async function handleGenerateAiQuestions(applicationId: string, stageId?: string) {
+  async function handleGenerateAiQuestions(
+    applicationId: string,
+    stageId: string | undefined,
+    questionCount: number
+  ) {
     try {
       return await generateAiRetrospectiveQuestions({
         applicationId,
         stageId: stageId || undefined,
+        questionCount,
       });
     } catch (error) {
-      window.alert(
-        getApiErrorMessage(error, 'AI 질문 생성 중 오류가 발생했습니다.')
-      );
+      window.alert(getAiQuestionErrorMessage(error));
       throw error;
     }
   }
