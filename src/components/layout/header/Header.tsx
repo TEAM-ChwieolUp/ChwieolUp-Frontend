@@ -68,9 +68,10 @@ export default function Header() {
   const user = useAuthStore((state) => state.user);
   const authStatus = useAuthStore((state) => state.status);
   const isAuthenticated = authStatus === 'authenticated';
+  const notificationsQueryKey = notificationKeys.list();
   const notificationsQuery = useQuery({
-    queryKey: notificationKeys.list,
-    queryFn: listNotifications,
+    queryKey: notificationsQueryKey,
+    queryFn: () => listNotifications(),
     enabled: isAuthenticated,
   });
   const notifications = notificationsQuery.data ?? [];
@@ -79,12 +80,12 @@ export default function Header() {
   const markReadMutation = useMutation({
     mutationFn: markNotificationAsRead,
     onMutate: async (notificationId) => {
-      await queryClient.cancelQueries({ queryKey: notificationKeys.list });
+      await queryClient.cancelQueries({ queryKey: notificationsQueryKey });
       const previousNotifications =
-        queryClient.getQueryData<NotificationItem[]>(notificationKeys.list);
+        queryClient.getQueryData<NotificationItem[]>(notificationsQueryKey);
 
       queryClient.setQueryData<NotificationItem[]>(
-        notificationKeys.list,
+        notificationsQueryKey,
         (current = []) =>
           current.map((notification) =>
             notification.id === notificationId
@@ -96,12 +97,12 @@ export default function Header() {
       return { previousNotifications };
     },
     onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: notificationKeys.list, type: 'active' });
+      await queryClient.refetchQueries({ queryKey: notificationsQueryKey, type: 'active' });
     },
     onError: (error, _notificationId, context) => {
       if (context?.previousNotifications) {
         queryClient.setQueryData(
-          notificationKeys.list,
+          notificationsQueryKey,
           context.previousNotifications
         );
       }
@@ -116,12 +117,12 @@ export default function Header() {
   const markAllReadMutation = useMutation({
     mutationFn: markAllNotificationsAsRead,
     onMutate: async () => {
-      await queryClient.cancelQueries({ queryKey: notificationKeys.list });
+      await queryClient.cancelQueries({ queryKey: notificationsQueryKey });
       const previousNotifications =
-        queryClient.getQueryData<NotificationItem[]>(notificationKeys.list);
+        queryClient.getQueryData<NotificationItem[]>(notificationsQueryKey);
 
       queryClient.setQueryData<NotificationItem[]>(
-        notificationKeys.list,
+        notificationsQueryKey,
         (current = []) =>
           current.map((notification) => ({
             ...notification,
@@ -132,12 +133,12 @@ export default function Header() {
       return { previousNotifications };
     },
     onSuccess: async () => {
-      await queryClient.refetchQueries({ queryKey: notificationKeys.list, type: 'active' });
+      await queryClient.refetchQueries({ queryKey: notificationsQueryKey, type: 'active' });
     },
     onError: (error, _variables, context) => {
       if (context?.previousNotifications) {
         queryClient.setQueryData(
-          notificationKeys.list,
+          notificationsQueryKey,
           context.previousNotifications
         );
       }
