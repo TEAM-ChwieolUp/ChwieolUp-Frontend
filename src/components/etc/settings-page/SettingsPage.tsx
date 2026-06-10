@@ -2,6 +2,7 @@
 
 import {
   BellRing,
+  CircleAlert,
   FileText,
   Mail,
   Mailbox,
@@ -9,7 +10,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useState } from 'react';
+import { useEffect, useId, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   disconnectMailIntegration,
@@ -47,10 +48,12 @@ const categories = [
 type CategoryId = (typeof categories)[number]['id'];
 
 export default function SettingsPage() {
+  const sliderId = useId();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
+  const [sensitivity, setSensitivity] = useState(75);
   const [interviewAlerts, setInterviewAlerts] = useState(true);
   const [deadlineAlerts, setDeadlineAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
@@ -77,7 +80,7 @@ export default function SettingsPage() {
     (integration) => integration.provider === 'GOOGLE'
   );
   const connectGmailMutation = useMutation({
-    mutationFn: () => getMailAuthorizationUrl('google'),
+    mutationFn: () => getMailAuthorizationUrl('google', '/more?tab=mail-sync'),
     onSuccess: (authorizationUrl) => {
       window.location.assign(authorizationUrl);
     },
@@ -109,6 +112,48 @@ export default function SettingsPage() {
     requestedTab && categories.some((category) => category.id === requestedTab)
       ? (requestedTab as CategoryId)
       : 'profile';
+  const mailOAuthError = searchParams.get('mail_oauth_error');
+  const mailOAuthConnected = searchParams.get('mail_oauth_connected') === '1';
+  const [showConnectedNotice, setShowConnectedNotice] = useState(mailOAuthConnected);
+
+  useEffect(() => {
+    if (!mailOAuthError) {
+      return;
+    }
+
+    const errorMessages: Record<string, string> = {
+      access_denied: 'Gmail 연동이 취소되었습니다.',
+      already_connected: '이미 연동된 Gmail 계정이 있습니다.',
+    };
+
+    const message =
+      errorMessages[mailOAuthError] ??
+      'Gmail 연동 중 오류가 발생했습니다. 다시 시도해주세요.';
+
+    window.alert(message);
+
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('mail_oauth_error');
+    const cleanQuery = next.toString();
+    router.replace(
+      `${pathname}${cleanQuery ? `?${cleanQuery}` : ''}`,
+      { scroll: false }
+    );
+  }, [mailOAuthError, pathname, router, searchParams]);
+
+  useEffect(() => {
+    if (!mailOAuthConnected) {
+      return;
+    }
+
+    const next = new URLSearchParams(searchParams.toString());
+    next.delete('mail_oauth_connected');
+    const cleanQuery = next.toString();
+    router.replace(
+      `${pathname}${cleanQuery ? `?${cleanQuery}` : ''}`,
+      { scroll: false }
+    );
+  }, [mailOAuthConnected, pathname, router, searchParams]);
 
   function getErrorMessage(error: unknown, fallback: string) {
     if (error instanceof ApiError) {
@@ -253,6 +298,21 @@ export default function SettingsPage() {
           </article>
         </div>
 
+        {showConnectedNotice && (
+          <div className={styles.profileNotice}>
+            <p>
+              Gmail 계정이 성공적으로 연동되었습니다.{' '}
+              <button
+                type='button'
+                style={{ background: 'none', border: 'none', cursor: 'pointer', textDecoration: 'underline', padding: 0 }}
+                onClick={() => setShowConnectedNotice(false)}
+              >
+                닫기
+              </button>
+            </p>
+          </div>
+        )}
+
         {isMailIntegrationsError ? (
           <div className={styles.profileNotice}>
             <p>{getMailIntegrationsErrorMessage()}</p>
@@ -260,6 +320,58 @@ export default function SettingsPage() {
         ) : null}
       </section>
 
+      <section className={styles.sectionCard}>
+        <header className={styles.sectionHeaderRow}>
+          <div className={styles.sectionHeader}>
+            <h2>AI 필터 민감도</h2>
+            <p>메일에서 채용 정보를 식별하는 AI의 분석 강도를 설정합니다.</p>
+          </div>
+
+          <span className={styles.modeBadge}>SMART MODE</span>
+        </header>
+
+        <div className={styles.sensitivityPanel}>
+          <div className={styles.sliderWrap}>
+            <label className={styles.srOnly} htmlFor={sliderId}>
+              AI 필터 민감도
+            </label>
+            <input
+              id={sliderId}
+              className={styles.slider}
+              type='range'
+              min='0'
+              max='100'
+              step='1'
+              value={sensitivity}
+              onChange={(event) => setSensitivity(Number(event.target.value))}
+            />
+          </div>
+
+          <div className={styles.scaleLabels} aria-hidden='true'>
+            <span>CONSERVATIVE</span>
+            <span>BALANCED</span>
+            <span className={styles.activeScale}>AGGRESSIVE</span>
+          </div>
+
+          <div className={styles.infoBox}>
+            <CircleAlert aria-hidden='true' />
+            <p>
+              <strong>{`현재 설정 (${sensitivity}%):`}</strong> AI가 스팸이나
+              단순 뉴스레터를 제외하고, 인터뷰 일정 및 서류 결과 통보 메일을 더
+              적극적으로 찾아내 대시보드에 추가합니다.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <div className={styles.actionBar}>
+        <button type='button' className={styles.ghostButton}>
+          초기화
+        </button>
+        <button type='button' className={styles.primaryButton}>
+          설정 저장하기
+        </button>
+      </div>
     </>
   );
 

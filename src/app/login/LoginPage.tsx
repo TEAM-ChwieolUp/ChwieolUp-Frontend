@@ -5,8 +5,9 @@ import Image from 'next/image';
 import { Manrope } from 'next/font/google';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useEffect } from 'react';
+import { createTemporaryDevSession, enableTemporaryDevAuth, isTemporaryDevAuthAvailable } from '@/lib/api/dev-auth';
 import { startSocialLogin } from '@/lib/api';
-import { useAuthStore } from '@/store/auth-store';
+import { setAuthSession, useAuthStore } from '@/store/auth-store';
 import styles from './login.module.css';
 
 const manrope = Manrope({
@@ -66,6 +67,17 @@ export default function LoginPage() {
   }, [authStatus, isBootstrapped, router]);
 
   const error = searchParams.get('error');
+
+  const handleSocialLogin = (provider: (typeof socialButtons)[number]['name']) => {
+    if (isTemporaryDevAuthAvailable()) {
+      enableTemporaryDevAuth();
+      setAuthSession(createTemporaryDevSession());
+      router.replace('/');
+      return;
+    }
+
+    startSocialLogin(provider);
+  };
 
   return (
     <main className={`${styles.page} ${manrope.className}`}>
@@ -154,7 +166,7 @@ export default function LoginPage() {
                 key={button.name}
                 className={`${styles.socialButton} ${button.className}`}
                 type='button'
-                onClick={() => startSocialLogin(button.name)}
+                onClick={() => handleSocialLogin(button.name)}
                 aria-label={button.label}
                 disabled={authStatus === 'bootstrapping'}
               >
