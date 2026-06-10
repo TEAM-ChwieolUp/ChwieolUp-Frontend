@@ -1,4 +1,5 @@
 import { ApiError } from './errors';
+import { isTemporaryDevAuthEnabled } from './dev-auth';
 import { buildRequestUrl, createApiError, parseResponseBody } from './http';
 import { refreshAccessToken, notifyAuthFailure } from './session';
 import { getAccessToken } from './token-store';
@@ -70,6 +71,10 @@ async function executeRequest<T>(
     headers: createHeaders(options),
     credentials,
   });
+
+  if (response.status === 401 && isTemporaryDevAuthEnabled()) {
+    throw await createApiError(response, url);
+  }
 
   if (response.status === 401 && retryOnAuthError && !options.skipAuth && !options._hasRetried) {
     try {

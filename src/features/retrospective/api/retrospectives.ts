@@ -1,4 +1,10 @@
 import { api } from '@/lib/api';
+import { shouldUseTemporaryDevData } from '@/lib/api/dev-auth';
+import {
+  TEMP_DEV_RETROSPECTIVE_DETAILS,
+  TEMP_DEV_RETROSPECTIVE_SUMMARIES,
+  TEMP_DEV_RETROSPECTIVE_TEMPLATES,
+} from '@/lib/api/dev-mock-data';
 import type { ApiSuccessResponse } from '@/lib/api';
 
 export interface RetrospectiveItemResponse {
@@ -83,6 +89,19 @@ function normalizeRetrospectiveItems(items: RetrospectiveItemResponse[]) {
 }
 
 export async function listApplicationRetrospectives(applicationId: string) {
+  if (shouldUseTemporaryDevData()) {
+    return TEMP_DEV_RETROSPECTIVE_SUMMARIES.filter(
+      (retrospective) => retrospective.applicationId === applicationId
+    ).map((retrospective) => ({
+      id: retrospective.id,
+      applicationId: retrospective.applicationId,
+      stageId: retrospective.stageId,
+      itemCount: retrospective.itemCount,
+      createdAt: retrospective.createdAt,
+      updatedAt: retrospective.updatedAt,
+    }));
+  }
+
   const response = await api.get<ApiSuccessResponse<RetrospectiveListResponseData>>(
     `/api/applications/${applicationId}/retrospectives`
   );
@@ -98,6 +117,25 @@ export async function listApplicationRetrospectives(applicationId: string) {
 }
 
 export async function getRetrospective(retrospectiveId: string) {
+  if (shouldUseTemporaryDevData()) {
+    const retrospective = TEMP_DEV_RETROSPECTIVE_DETAILS.find(
+      (entry) => entry.id === retrospectiveId
+    );
+
+    if (!retrospective) {
+      throw new Error(`Temporary retrospective not found: ${retrospectiveId}`);
+    }
+
+    return {
+      id: retrospective.id,
+      applicationId: retrospective.applicationId,
+      stageId: retrospective.stageId,
+      items: retrospective.items,
+      createdAt: retrospective.createdAt,
+      updatedAt: retrospective.updatedAt,
+    };
+  }
+
   const response = await api.get<ApiSuccessResponse<RetrospectiveDetailResponse>>(
     `/api/retrospectives/${retrospectiveId}`
   );
@@ -192,6 +230,10 @@ export async function deleteRetrospectiveItem(
 }
 
 export async function listRetrospectiveTemplates() {
+  if (shouldUseTemporaryDevData()) {
+    return TEMP_DEV_RETROSPECTIVE_TEMPLATES;
+  }
+
   const response = await api.get<ApiSuccessResponse<TemplateResponse[] | TemplateListResponseData>>(
     '/api/retrospective-templates'
   );

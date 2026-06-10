@@ -1,4 +1,6 @@
 import { api } from '@/lib/api';
+import { shouldUseTemporaryDevData } from '@/lib/api/dev-auth';
+import { TEMP_DEV_STAGES } from '@/lib/api/dev-mock-data';
 import type { ApiSuccessResponse } from '@/lib/api';
 import type {
   KanbanStage,
@@ -55,6 +57,10 @@ export function mapStageResponseToKanbanStage(stage: StageResponse): KanbanStage
 }
 
 export async function listStages() {
+  if (shouldUseTemporaryDevData()) {
+    return TEMP_DEV_STAGES;
+  }
+
   const response = await api.get<ApiSuccessResponse<StageResponse[]>>('/api/stages');
   return response.data
     .map(mapStageResponseToKanbanStage)
