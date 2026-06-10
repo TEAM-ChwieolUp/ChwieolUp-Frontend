@@ -36,7 +36,9 @@ export interface KanbanFormValues {
   company: string;
   position: string;
   appliedDate: string;
+  appliedTime: string;
   deadlineAt: string;
+  deadlineTime: string;
   stageId: string;
   tags: Tag[];
   nextAction: string;
