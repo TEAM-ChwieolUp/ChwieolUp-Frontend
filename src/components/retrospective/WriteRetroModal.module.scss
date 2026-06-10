@@ -148,6 +148,157 @@
   &:hover { background: #f1f5f9; }
 }
 
+// ── Template Custom Dropdown ──
+
+.templateDropdown {
+  position: relative;
+  flex: 1;
+}
+
+.templateTrigger {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 9px 12px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  cursor: pointer;
+  text-align: left;
+  transition: border-color 0.15s, box-shadow 0.15s;
+  &:hover:not(:disabled) { border-color: #cbd5e1; }
+  &:disabled { background: #f8fafc; cursor: not-allowed; }
+}
+
+.templateTriggerOpen {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.templateTriggerPlaceholder {
+  font-size: 0.9rem;
+  color: #94a3b8;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.templateTriggerSelected {
+  font-size: 0.9rem;
+  color: #0f172a;
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.templateChevron {
+  color: #94a3b8;
+  flex-shrink: 0;
+  transition: transform 0.18s ease;
+}
+
+.templateChevronOpen {
+  transform: rotate(180deg);
+}
+
+.templateOptions {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  right: 0;
+  z-index: 50;
+  margin: 0;
+  padding: 6px;
+  list-style: none;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.1), 0 2px 8px rgba(15, 23, 42, 0.06);
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.templateOption {
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 0.88rem;
+  color: #334155;
+  cursor: pointer;
+  transition: background 0.12s;
+  &:hover { background: #f1f5f9; }
+
+  &:has(.optionCompany) {
+    padding: 7px 12px;
+  }
+}
+
+.templateOptionActive {
+  background: #eef2ff;
+  color: #4f46e5;
+  font-weight: 600;
+  &:hover { background: #e0e7ff; }
+}
+
+.templateOptionEmpty {
+  padding: 10px 12px;
+  font-size: 0.85rem;
+  color: #94a3b8;
+  text-align: center;
+}
+
+.optionCompany {
+  display: block;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.optionPosition {
+  display: block;
+  font-size: 0.78rem;
+  color: #94a3b8;
+  margin-top: 1px;
+}
+
+// ── Apply / AI Buttons ──
+
+.applyBtn {
+  padding: 9px 16px;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  background: #ffffff;
+  color: #475569;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+  &:hover:not(:disabled) { background: #eef2ff; border-color: #c7d2fe; color: #4f46e5; }
+  &:disabled { opacity: 0.45; cursor: not-allowed; }
+}
+
+.aiBtn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 9px 16px;
+  border: 1px solid #e0e7ff;
+  border-radius: 10px;
+  background: #eef2ff;
+  color: #4f46e5;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.15s, border-color 0.15s;
+  &:hover:not(:disabled) { background: #e0e7ff; border-color: #c7d2fe; }
+  &:disabled { opacity: 0.5; cursor: not-allowed; }
+}
+
 .actions {
   display: flex;
   justify-content: flex-end;

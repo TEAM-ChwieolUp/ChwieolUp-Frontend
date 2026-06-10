@@ -270,6 +270,48 @@ export async function applyRetrospectiveTemplate(
   };
 }
 
+export async function createRetrospectiveTemplate(payload: {
+  name: string;
+  questions: string[];
+}) {
+  const response = await api.post<ApiSuccessResponse<TemplateResponse>>(
+    '/api/retrospective-templates',
+    payload
+  );
+
+  return {
+    id: String(response.data.id),
+    name: response.data.name,
+    questions: response.data.questions,
+  };
+}
+
+export async function updateRetrospectiveTemplate(
+  templateId: string,
+  payload: {
+    name?: string | null;
+    questions?: string[] | null;
+  }
+) {
+  const response = await api.patch<ApiSuccessResponse<TemplateResponse>>(
+    `/api/retrospective-templates/${templateId}`,
+    {
+      ...payload,
+      isEmpty: false,
+    }
+  );
+
+  return {
+    id: String(response.data.id),
+    name: response.data.name,
+    questions: response.data.questions,
+  };
+}
+
+export async function deleteRetrospectiveTemplate(templateId: string) {
+  await api.delete(`/api/retrospective-templates/${templateId}`);
+}
+
 export async function generateAiRetrospectiveQuestions(payload: {
   applicationId: string;
   stageId?: string | null;
