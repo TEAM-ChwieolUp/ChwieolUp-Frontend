@@ -38,6 +38,7 @@ export interface MailDetailData {
 
 export interface MailAiAction {
   id: string;
+  messageId?: string;
   tone: 'blue' | 'green';
   title: string;
   description: string[];
@@ -45,6 +46,7 @@ export interface MailAiAction {
   primaryAction: string;
   secondaryAction: string;
   icon: 'kanban' | 'calendar';
+  recommendedStageId?: string;
 }
 
 export interface MailRecord {

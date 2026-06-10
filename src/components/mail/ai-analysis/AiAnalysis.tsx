@@ -5,9 +5,18 @@ import type { MailAiAction } from '../types';
 interface AiAnalysisProps {
   actions: MailAiAction[];
   summary: string;
+  pendingActionId?: string | null;
+  onPrimaryAction?: (action: MailAiAction) => void;
+  onSecondaryAction?: (action: MailAiAction) => void;
 }
 
-export default function AiAnalysis({ actions, summary }: AiAnalysisProps) {
+export default function AiAnalysis({
+  actions,
+  summary,
+  pendingActionId = null,
+  onPrimaryAction,
+  onSecondaryAction,
+}: AiAnalysisProps) {
   return (
     <section className={styles.section} aria-labelledby='mail-ai-analysis-heading'>
       <header className={styles.header}>
@@ -73,10 +82,20 @@ export default function AiAnalysis({ actions, summary }: AiAnalysisProps) {
               </div>
 
               <div className={styles.actions}>
-                <button type='button' className={styles.primaryButton}>
-                  {action.primaryAction}
+                <button
+                  type='button'
+                  className={styles.primaryButton}
+                  disabled={pendingActionId !== null}
+                  onClick={() => onPrimaryAction?.(action)}
+                >
+                  {pendingActionId === action.id ? '처리 중' : action.primaryAction}
                 </button>
-                <button type='button' className={styles.secondaryButton}>
+                <button
+                  type='button'
+                  className={styles.secondaryButton}
+                  disabled={pendingActionId !== null}
+                  onClick={() => onSecondaryAction?.(action)}
+                >
                   {action.secondaryAction}
                 </button>
               </div>

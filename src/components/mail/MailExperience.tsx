@@ -14,6 +14,12 @@ import {
   listMailIntegrations,
   mailKeys,
 } from '@/features/mail/api/mail';
+import {
+  applicationKeys,
+  createApplication,
+  listApplications,
+  updateApplication,
+} from '@/features/kanban/api/applications';
 import { ApiError } from '@/lib/api';
 import styles from '@/app/(dashboard)/mail/page.module.scss';
 
@@ -115,6 +121,27 @@ function getStageCategoryLabel(category: ClassifiedMailMessageResponse['classifi
   }
 }
 
+function normalizeSearchText(value: string) {
+  return value.replace(/\s+/g, '').toLowerCase();
+}
+
+function inferCompanyName(message: ClassifiedMailMessageResponse) {
+  const sender = getSenderParts(message.from);
+  const senderName = sender.name.trim();
+
+  if (senderName && senderName !== sender.email) {
+    return senderName.slice(0, 100);
+  }
+
+  const domain = sender.email.split('@')[1]?.split('.')[0];
+
+  return (domain || '미확인 회사').slice(0, 100);
+}
+
+function inferPosition(message: ClassifiedMailMessageResponse) {
+  return (message.subject.trim() || '메일 기반 지원 카드').slice(0, 100);
+}
+
 function mapMessageToAiActions(
   message: ClassifiedMailMessageResponse
 ): MailAiAction[] {
@@ -129,6 +156,8 @@ function mapMessageToAiActions(
   if (classification.recommendedStageId !== null) {
     actions.push({
       id: `${message.messageId}-stage`,
+      messageId: message.messageId,
+      recommendedStageId: String(classification.recommendedStageId),
       tone: 'blue',
       icon: 'kanban',
       title: '칸반 보드에서',
@@ -231,6 +260,7 @@ export default function MailExperience() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const [activeId, setActiveId] = useState<string | null>(null);
+  const [dismissedActionIds, setDismissedActionIds] = useState<string[]>([]);
 
   const messagesQuery = useQuery({
     queryKey: mailKeys.classifiedMessages(CLASSIFIED_MAIL_LIMIT),
@@ -255,9 +285,99 @@ export default function MailExperience() {
     },
   });
 
+  const applyKanbanActionMutation = useMutation({
+    mutationFn: async (action: MailAiAction) => {
+      if (!action.recommendedStageId) {
+        throw new Error('추천 단계 정보가 없습니다.');
+      }
+
+      if (!action.messageId) {
+        throw new Error('처리할 메일 정보가 없습니다.');
+      }
+
+      const message = (messagesQuery.data ?? []).find(
+        (entry) => entry.messageId === action.messageId
+      );
+
+      if (!message) {
+        throw new Error('메일 정보를 찾을 수 없습니다.');
+      }
+
+      const board = await listApplications();
+      const sender = getSenderParts(message.from);
+      const searchText = normalizeSearchText(
+        [message.subject, message.snippet, sender.name, sender.email].join(' ')
+      );
+      const matchedCard = board.cards.find((card) => {
+        const company = normalizeSearchText(card.company);
+
+        return company.length >= 2 && searchText.includes(company);
+      });
+
+      if (matchedCard) {
+        await updateApplication(matchedCard.id, {
+          stageId: action.recommendedStageId,
+          companyName: matchedCard.company,
+          position: matchedCard.position,
+          appliedAt: matchedCard.appliedAt ?? null,
+          deadlineAt: matchedCard.deadlineAt ?? null,
+          noResponseDays: matchedCard.noResponseDays,
+          priority: matchedCard.priority ?? 'NORMAL',
+          memo: matchedCard.memo ?? '',
+          jobPostingUrl: matchedCard.jobPostingUrl ?? '',
+          tagIds: matchedCard.tagIds ?? null,
+        });
+
+        return 'updated' as const;
+      }
+
+      await createApplication({
+        stageId: action.recommendedStageId,
+        companyName: inferCompanyName(message),
+        position: inferPosition(message),
+        appliedAt: message.receivedAt,
+        noResponseDays: 0,
+        priority: 'NORMAL',
+        memo: [message.snippet, message.classification.reason]
+          .filter(Boolean)
+          .join('\n\n'),
+        jobPostingUrl: '',
+        tagIds: [],
+      });
+
+      return 'created' as const;
+    },
+    onSuccess: async (result, action) => {
+      await queryClient.invalidateQueries({ queryKey: applicationKeys.all });
+      setDismissedActionIds((current) =>
+        current.includes(action.id) ? current : [...current, action.id]
+      );
+      window.alert(
+        result === 'updated'
+          ? '기존 카드의 진행 단계를 수정했습니다.'
+          : '새 칸반 카드를 생성했습니다.'
+      );
+    },
+    onError: (error) => {
+      window.alert(
+        getApiErrorMessage(error, 'AI 추천 액션 처리 중 오류가 발생했습니다.')
+      );
+    },
+  });
+
   const records = useMemo(
-    () => (messagesQuery.data ?? []).map(mapMessageToRecord),
-    [messagesQuery.data]
+    () =>
+      (messagesQuery.data ?? []).map((message) => {
+        const record = mapMessageToRecord(message);
+
+        return {
+          ...record,
+          aiActions: record.aiActions.filter(
+            (action) => !dismissedActionIds.includes(action.id)
+          ),
+        };
+      }),
+    [dismissedActionIds, messagesQuery.data]
   );
 
   const selectedId = activeId ?? records[0]?.thread.id ?? null;
@@ -301,6 +421,19 @@ export default function MailExperience() {
               <AiAnalysis
                 actions={activeMail.aiActions}
                 summary={activeMail.aiSummary}
+                pendingActionId={
+                  applyKanbanActionMutation.isPending
+                    ? applyKanbanActionMutation.variables?.id
+                    : null
+                }
+                onPrimaryAction={(action) =>
+                  applyKanbanActionMutation.mutate(action)
+                }
+                onSecondaryAction={(action) =>
+                  setDismissedActionIds((current) =>
+                    current.includes(action.id) ? current : [...current, action.id]
+                  )
+                }
               />
             </>
           ) : (
