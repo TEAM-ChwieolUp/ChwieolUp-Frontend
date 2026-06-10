@@ -2,7 +2,6 @@
 
 import {
   BellRing,
-  CircleAlert,
   FileText,
   Mail,
   Mailbox,
@@ -10,7 +9,7 @@ import {
   UserRound,
 } from 'lucide-react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { useEffect, useId, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   disconnectMailIntegration,
@@ -48,12 +47,10 @@ const categories = [
 type CategoryId = (typeof categories)[number]['id'];
 
 export default function SettingsPage() {
-  const sliderId = useId();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const queryClient = useQueryClient();
-  const [sensitivity, setSensitivity] = useState(75);
   const [interviewAlerts, setInterviewAlerts] = useState(true);
   const [deadlineAlerts, setDeadlineAlerts] = useState(true);
   const [weeklyDigest, setWeeklyDigest] = useState(false);
@@ -320,58 +317,6 @@ export default function SettingsPage() {
         ) : null}
       </section>
 
-      <section className={styles.sectionCard}>
-        <header className={styles.sectionHeaderRow}>
-          <div className={styles.sectionHeader}>
-            <h2>AI 필터 민감도</h2>
-            <p>메일에서 채용 정보를 식별하는 AI의 분석 강도를 설정합니다.</p>
-          </div>
-
-          <span className={styles.modeBadge}>SMART MODE</span>
-        </header>
-
-        <div className={styles.sensitivityPanel}>
-          <div className={styles.sliderWrap}>
-            <label className={styles.srOnly} htmlFor={sliderId}>
-              AI 필터 민감도
-            </label>
-            <input
-              id={sliderId}
-              className={styles.slider}
-              type='range'
-              min='0'
-              max='100'
-              step='1'
-              value={sensitivity}
-              onChange={(event) => setSensitivity(Number(event.target.value))}
-            />
-          </div>
-
-          <div className={styles.scaleLabels} aria-hidden='true'>
-            <span>CONSERVATIVE</span>
-            <span>BALANCED</span>
-            <span className={styles.activeScale}>AGGRESSIVE</span>
-          </div>
-
-          <div className={styles.infoBox}>
-            <CircleAlert aria-hidden='true' />
-            <p>
-              <strong>{`현재 설정 (${sensitivity}%):`}</strong> AI가 스팸이나
-              단순 뉴스레터를 제외하고, 인터뷰 일정 및 서류 결과 통보 메일을 더
-              적극적으로 찾아내 대시보드에 추가합니다.
-            </p>
-          </div>
-        </div>
-      </section>
-
-      <div className={styles.actionBar}>
-        <button type='button' className={styles.ghostButton}>
-          초기화
-        </button>
-        <button type='button' className={styles.primaryButton}>
-          설정 저장하기
-        </button>
-      </div>
     </>
   );
 
