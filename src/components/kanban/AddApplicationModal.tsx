@@ -26,7 +26,9 @@ const EMPTY_FORM: KanbanFormValues = {
   company: '',
   position: '',
   appliedDate: '',
+  appliedTime: '',
   deadlineAt: '',
+  deadlineTime: '',
   stageId: '',
   tags: [],
   nextAction: '',
@@ -37,7 +39,19 @@ const EMPTY_FORM: KanbanFormValues = {
 
 function toInputDate(value?: string): string {
   if (!value) return '';
-  if (value.includes('T')) return value.slice(0, 10);
+  if (value.includes('T')) {
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return value.slice(0, 10);
+    }
+
+    return [
+      date.getFullYear(),
+      String(date.getMonth() + 1).padStart(2, '0'),
+      String(date.getDate()).padStart(2, '0'),
+    ].join('-');
+  }
   if (/^\d{4}-\d{2}-\d{2}/.test(value)) return value.slice(0, 10);
 
   const [month, day] = value.split('/').map(Number);
@@ -47,8 +61,32 @@ function toInputDate(value?: string): string {
   return `${year}-${String(month).padStart(2, '0')}-${String(day).padStart(2, '0')}`;
 }
 
+function toInputTime(value?: string | null): string {
+  if (!value || !value.includes('T')) {
+    return '';
+  }
+
+  const date = new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return [
+    String(date.getHours()).padStart(2, '0'),
+    String(date.getMinutes()).padStart(2, '0'),
+  ].join(':');
+}
+
 function formatDate(raw: string): string {
   if (!raw) return '';
+
+  if (/^\d{4}-\d{2}-\d{2}$/.test(raw)) {
+    const [, month, day] = raw.split('-').map(Number);
+
+    return `${month}/${day}`;
+  }
+
   const date = new Date(raw);
 
   if (Number.isNaN(date.getTime())) {
@@ -56,6 +94,35 @@ function formatDate(raw: string): string {
   }
 
   return `${date.getMonth() + 1}/${date.getDate()}`;
+}
+
+function formatDateTime(date: string, time: string): string {
+  const dateLabel = formatDate(date);
+
+  if (!dateLabel) {
+    return '';
+  }
+
+  return time ? `${dateLabel} ${time}` : dateLabel;
+}
+
+function toApiDateTime(date: string, time: string): string {
+  if (!date) {
+    return '';
+  }
+
+  if (!time) {
+    return date;
+  }
+
+  const [year, month, day] = date.split('-').map(Number);
+  const [hours, minutes] = time.split(':').map(Number);
+
+  if (!year || !month || !day || Number.isNaN(hours) || Number.isNaN(minutes)) {
+    return date;
+  }
+
+  return new Date(year, month - 1, day, hours, minutes).toISOString();
 }
 
 export default function AddApplicationModal({
@@ -78,7 +145,9 @@ export default function AddApplicationModal({
         company: card.company,
         position: card.position,
         appliedDate: toInputDate(card.appliedAt ?? card.appliedDate),
+        appliedTime: toInputTime(card.appliedAt),
         deadlineAt: toInputDate(card.deadlineAt ?? undefined),
+        deadlineTime: toInputTime(card.deadlineAt),
         stageId: card.stageId,
         tags: card.tags,
         nextAction: card.nextAction ?? '',
@@ -147,8 +216,10 @@ export default function AddApplicationModal({
         company: form.company.trim(),
         position: form.position.trim(),
         appliedDate: formatDate(form.appliedDate),
-        appliedAt: form.appliedDate,
-        deadlineAt: form.deadlineAt || null,
+        appliedAt: toApiDateTime(form.appliedDate, form.appliedTime),
+        deadlineAt: form.deadlineAt
+          ? toApiDateTime(form.deadlineAt, form.deadlineTime)
+          : null,
         stageId: form.stageId,
         tags: form.tags,
         nextAction: form.nextAction.trim() || undefined,
@@ -192,11 +263,11 @@ export default function AddApplicationModal({
           <span className={styles.metaChip}>{selectedStage?.name ?? '단계 선택'}</span>
           <span className={styles.metaItem}>
             <CalendarDays size={14} />
-            지원일 {form.appliedDate ? formatDate(form.appliedDate) : '미입력'}
+            지원일 {form.appliedDate ? formatDateTime(form.appliedDate, form.appliedTime) : '미입력'}
           </span>
           <span className={styles.metaItem}>
             <CalendarDays size={14} />
-            마감일 {form.deadlineAt ? formatDate(form.deadlineAt) : '미지정'}
+            마감일 {form.deadlineAt ? formatDateTime(form.deadlineAt, form.deadlineTime) : '미지정'}
           </span>
           <span className={styles.metaItem}>
             <TagIcon size={14} />
@@ -241,14 +312,23 @@ export default function AddApplicationModal({
           <div className={styles.grid}>
             <div className={styles.field}>
               <label className={styles.label} htmlFor="appliedDate">지원일</label>
-              <input
-                id="appliedDate"
-                className={styles.input}
-                type="date"
-                value={form.appliedDate}
-                onChange={(e) => handleChange('appliedDate', e.target.value)}
-                required
-              />
+              <div className={styles.dateTimeRow}>
+                <input
+                  id="appliedDate"
+                  className={styles.input}
+                  type="date"
+                  value={form.appliedDate}
+                  onChange={(e) => handleChange('appliedDate', e.target.value)}
+                  required
+                />
+                <input
+                  className={`${styles.input} ${styles.timeInput}`}
+                  type="time"
+                  aria-label="지원 시간"
+                  value={form.appliedTime}
+                  onChange={(e) => handleChange('appliedTime', e.target.value)}
+                />
+              </div>
             </div>
 
             <div className={styles.field}>
@@ -257,19 +337,35 @@ export default function AddApplicationModal({
                 <button
                   type="button"
                   className={styles.clearDateBtn}
-                  onClick={() => handleChange('deadlineAt', '')}
-                  disabled={!form.deadlineAt || isSaving}
+                  onClick={() =>
+                    setForm((prev) => ({
+                      ...prev,
+                      deadlineAt: '',
+                      deadlineTime: '',
+                    }))
+                  }
+                  disabled={(!form.deadlineAt && !form.deadlineTime) || isSaving}
                 >
                   미지정
                 </button>
               </div>
-              <input
-                id="deadlineAt"
-                className={styles.input}
-                type="date"
-                value={form.deadlineAt}
-                onChange={(e) => handleChange('deadlineAt', e.target.value)}
-              />
+              <div className={styles.dateTimeRow}>
+                <input
+                  id="deadlineAt"
+                  className={styles.input}
+                  type="date"
+                  value={form.deadlineAt}
+                  onChange={(e) => handleChange('deadlineAt', e.target.value)}
+                />
+                <input
+                  className={`${styles.input} ${styles.timeInput}`}
+                  type="time"
+                  aria-label="마감 시간"
+                  value={form.deadlineTime}
+                  onChange={(e) => handleChange('deadlineTime', e.target.value)}
+                  disabled={!form.deadlineAt}
+                />
+              </div>
             </div>
           </div>
 
