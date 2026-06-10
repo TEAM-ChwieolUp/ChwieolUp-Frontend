@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useMemo, useState } from 'react';
-import { Plus, Sparkles, Trash2, X } from 'lucide-react';
+import { useEffect, useMemo, useRef, useState } from 'react';
+import { ChevronDown, Plus, Sparkles, Trash2, X } from 'lucide-react';
 import { KanbanStage } from '@/components/kanban/types';
 import {
   RetrospectiveDetail,
@@ -68,7 +68,38 @@ export default function WriteRetroModal({
     createFormState(initial, applications)
   );
   const [selectedTemplateId, setSelectedTemplateId] = useState('');
+  const [applicationDropdownOpen, setApplicationDropdownOpen] = useState(false);
+  const [stageDropdownOpen, setStageDropdownOpen] = useState(false);
+  const [templateDropdownOpen, setTemplateDropdownOpen] = useState(false);
   const [isGeneratingQuestions, setIsGeneratingQuestions] = useState(false);
+  const applicationDropdownRef = useRef<HTMLDivElement>(null);
+  const stageDropdownRef = useRef<HTMLDivElement>(null);
+  const templateDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    function handleOutsideClick(event: MouseEvent) {
+      if (
+        applicationDropdownRef.current &&
+        !applicationDropdownRef.current.contains(event.target as Node)
+      ) {
+        setApplicationDropdownOpen(false);
+      }
+      if (
+        stageDropdownRef.current &&
+        !stageDropdownRef.current.contains(event.target as Node)
+      ) {
+        setStageDropdownOpen(false);
+      }
+      if (
+        templateDropdownRef.current &&
+        !templateDropdownRef.current.contains(event.target as Node)
+      ) {
+        setTemplateDropdownOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', handleOutsideClick);
+    return () => document.removeEventListener('mousedown', handleOutsideClick);
+  }, []);
   const isEditMode = Boolean(initial);
   const availableStages = useMemo(
     () => stages.filter((stage) => stage.kind === 'custom'),
@@ -224,39 +255,101 @@ export default function WriteRetroModal({
         <form className={styles.form} onSubmit={handleSubmit}>
           <div className={styles.row}>
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="retro-application">지원 카드</label>
-              <select
-                id="retro-application"
-                className={styles.select}
-                value={form.applicationId}
-                onChange={(event) => handleChange('applicationId', event.target.value)}
-                disabled={isEditMode || isSaving}
-              >
-                <option value="">지원 카드 선택</option>
-                {applications.map((application) => (
-                  <option key={application.id} value={application.id}>
-                    {application.company} · {application.position}
-                  </option>
-                ))}
-              </select>
+              <label className={styles.label}>지원 카드</label>
+              <div ref={applicationDropdownRef} className={styles.templateDropdown}>
+                <button
+                  type="button"
+                  className={`${styles.templateTrigger} ${applicationDropdownOpen ? styles.templateTriggerOpen : ''}`}
+                  onClick={() => !(isEditMode || isSaving) && setApplicationDropdownOpen((prev) => !prev)}
+                  disabled={isEditMode || isSaving}
+                  aria-haspopup="listbox"
+                  aria-expanded={applicationDropdownOpen}
+                >
+                  <span className={form.applicationId ? styles.templateTriggerSelected : styles.templateTriggerPlaceholder}>
+                    {applications.find((a) => a.id === form.applicationId)
+                      ? `${applications.find((a) => a.id === form.applicationId)!.company} · ${applications.find((a) => a.id === form.applicationId)!.position}`
+                      : '지원 카드 선택'}
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={`${styles.templateChevron} ${applicationDropdownOpen ? styles.templateChevronOpen : ''}`}
+                  />
+                </button>
+                {applicationDropdownOpen && (
+                  <ul className={styles.templateOptions} role="listbox">
+                    {applications.length === 0 ? (
+                      <li className={styles.templateOptionEmpty}>지원 카드가 없습니다</li>
+                    ) : (
+                      applications.map((application) => (
+                        <li
+                          key={application.id}
+                          role="option"
+                          aria-selected={form.applicationId === application.id}
+                          className={`${styles.templateOption} ${form.applicationId === application.id ? styles.templateOptionActive : ''}`}
+                          onClick={() => {
+                            handleChange('applicationId', application.id);
+                            setApplicationDropdownOpen(false);
+                          }}
+                        >
+                          <span className={styles.optionCompany}>{application.company}</span>
+                          <span className={styles.optionPosition}>{application.position}</span>
+                        </li>
+                      ))
+                    )}
+                  </ul>
+                )}
+              </div>
             </div>
 
             <div className={styles.field}>
-              <label className={styles.label} htmlFor="retro-stage">단계</label>
-              <select
-                id="retro-stage"
-                className={styles.select}
-                value={form.stageId}
-                onChange={(event) => handleChange('stageId', event.target.value)}
-                disabled={isEditMode || isSaving}
-              >
-                <option value="">종합 회고</option>
-                {availableStages.map((stage) => (
-                  <option key={stage.id} value={stage.id}>
-                    {stage.name}
-                  </option>
-                ))}
-              </select>
+              <label className={styles.label}>단계</label>
+              <div ref={stageDropdownRef} className={styles.templateDropdown}>
+                <button
+                  type="button"
+                  className={`${styles.templateTrigger} ${stageDropdownOpen ? styles.templateTriggerOpen : ''}`}
+                  onClick={() => !(isEditMode || isSaving) && setStageDropdownOpen((prev) => !prev)}
+                  disabled={isEditMode || isSaving}
+                  aria-haspopup="listbox"
+                  aria-expanded={stageDropdownOpen}
+                >
+                  <span className={form.stageId ? styles.templateTriggerSelected : styles.templateTriggerPlaceholder}>
+                    {availableStages.find((s) => s.id === form.stageId)?.name ?? '종합 회고'}
+                  </span>
+                  <ChevronDown
+                    size={14}
+                    className={`${styles.templateChevron} ${stageDropdownOpen ? styles.templateChevronOpen : ''}`}
+                  />
+                </button>
+                {stageDropdownOpen && (
+                  <ul className={styles.templateOptions} role="listbox">
+                    <li
+                      role="option"
+                      aria-selected={form.stageId === ''}
+                      className={`${styles.templateOption} ${form.stageId === '' ? styles.templateOptionActive : ''}`}
+                      onClick={() => {
+                        handleChange('stageId', '');
+                        setStageDropdownOpen(false);
+                      }}
+                    >
+                      종합 회고
+                    </li>
+                    {availableStages.map((stage) => (
+                      <li
+                        key={stage.id}
+                        role="option"
+                        aria-selected={form.stageId === stage.id}
+                        className={`${styles.templateOption} ${form.stageId === stage.id ? styles.templateOptionActive : ''}`}
+                        onClick={() => {
+                          handleChange('stageId', stage.id);
+                          setStageDropdownOpen(false);
+                        }}
+                      >
+                        {stage.name}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
             </div>
           </div>
 
@@ -264,23 +357,52 @@ export default function WriteRetroModal({
             <div className={styles.field}>
               <label className={styles.label} htmlFor="retro-template">템플릿</label>
               <div className={styles.addSectionRow}>
-                <select
-                  id="retro-template"
-                  className={styles.select}
-                  value={selectedTemplateId}
-                  onChange={(event) => setSelectedTemplateId(event.target.value)}
-                  disabled={isSaving}
+                <div
+                  ref={templateDropdownRef}
+                  className={styles.templateDropdown}
                 >
-                  <option value="">템플릿 선택</option>
-                  {templates.map((template) => (
-                    <option key={template.id} value={template.id}>
-                      {template.name}
-                    </option>
-                  ))}
-                </select>
+                  <button
+                    type="button"
+                    className={`${styles.templateTrigger} ${templateDropdownOpen ? styles.templateTriggerOpen : ''}`}
+                    onClick={() => !isSaving && setTemplateDropdownOpen((prev) => !prev)}
+                    disabled={isSaving}
+                    aria-haspopup="listbox"
+                    aria-expanded={templateDropdownOpen}
+                  >
+                    <span className={selectedTemplateId ? styles.templateTriggerSelected : styles.templateTriggerPlaceholder}>
+                      {templates.find((t) => t.id === selectedTemplateId)?.name ?? '템플릿 선택'}
+                    </span>
+                    <ChevronDown
+                      size={14}
+                      className={`${styles.templateChevron} ${templateDropdownOpen ? styles.templateChevronOpen : ''}`}
+                    />
+                  </button>
+                  {templateDropdownOpen && (
+                    <ul className={styles.templateOptions} role="listbox">
+                      {templates.length === 0 ? (
+                        <li className={styles.templateOptionEmpty}>템플릿이 없습니다</li>
+                      ) : (
+                        templates.map((template) => (
+                          <li
+                            key={template.id}
+                            role="option"
+                            aria-selected={selectedTemplateId === template.id}
+                            className={`${styles.templateOption} ${selectedTemplateId === template.id ? styles.templateOptionActive : ''}`}
+                            onClick={() => {
+                              setSelectedTemplateId(template.id);
+                              setTemplateDropdownOpen(false);
+                            }}
+                          >
+                            {template.name}
+                          </li>
+                        ))
+                      )}
+                    </ul>
+                  )}
+                </div>
                 <button
                   type="button"
-                  className={styles.addSectionBtn}
+                  className={styles.applyBtn}
                   onClick={() => void applyTemplateLocally()}
                   disabled={!selectedTemplateId || isSaving}
                 >
@@ -293,7 +415,7 @@ export default function WriteRetroModal({
               <label className={styles.label}>AI 질문</label>
               <button
                 type="button"
-                className={styles.addSectionBtn}
+                className={styles.aiBtn}
                 onClick={() => void handleGenerateAiQuestions()}
                 disabled={isSaving || isGeneratingQuestions}
               >

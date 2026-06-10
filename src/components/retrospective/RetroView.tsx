@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from 'react';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { Plus, Search } from 'lucide-react';
+import { LayoutList, Plus, Search } from 'lucide-react';
 import { KanbanStage } from '@/components/kanban/types';
 import { ApiError } from '@/lib/api';
 import { listApplications, applicationKeys } from '@/features/kanban/api/applications';
@@ -11,16 +11,20 @@ import {
   addRetrospectiveItem,
   applyRetrospectiveTemplate,
   createApplicationRetrospective,
+  createRetrospectiveTemplate,
   deleteRetrospective,
   deleteRetrospectiveItem,
+  deleteRetrospectiveTemplate,
   generateAiRetrospectiveQuestions,
   getRetrospective,
   listApplicationRetrospectives,
   listRetrospectiveTemplates,
   retrospectiveKeys,
   updateRetrospectiveItem,
+  updateRetrospectiveTemplate,
 } from '@/features/retrospective/api/retrospectives';
 import RetroDetail from './RetroDetail';
+import TemplateManageModal from './TemplateManageModal';
 import {
   OVERALL_STAGE_COLOR,
   OVERALL_STAGE_NAME,
@@ -185,6 +189,7 @@ export default function RetroView() {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [showWriteModal, setShowWriteModal] = useState(false);
+  const [showTemplateModal, setShowTemplateModal] = useState(false);
   const [editingRetroId, setEditingRetroId] = useState<string | null>(null);
 
   const { data: boardData } = useQuery({
@@ -388,6 +393,43 @@ export default function RetroView() {
     },
   });
 
+  const createTemplateMutation = useMutation({
+    mutationFn: (payload: { name: string; questions: string[] }) =>
+      createRetrospectiveTemplate(payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: retrospectiveKeys.templates });
+    },
+    onError: (error) => {
+      window.alert(getApiErrorMessage(error, '템플릿 생성 중 오류가 발생했습니다.'));
+    },
+  });
+
+  const updateTemplateMutation = useMutation({
+    mutationFn: ({
+      templateId,
+      payload,
+    }: {
+      templateId: string;
+      payload: { name: string; questions: string[] };
+    }) => updateRetrospectiveTemplate(templateId, payload),
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: retrospectiveKeys.templates });
+    },
+    onError: (error) => {
+      window.alert(getApiErrorMessage(error, '템플릿 수정 중 오류가 발생했습니다.'));
+    },
+  });
+
+  const deleteTemplateMutation = useMutation({
+    mutationFn: deleteRetrospectiveTemplate,
+    onSuccess: async () => {
+      await queryClient.invalidateQueries({ queryKey: retrospectiveKeys.templates });
+    },
+    onError: (error) => {
+      window.alert(getApiErrorMessage(error, '템플릿 삭제 중 오류가 발생했습니다.'));
+    },
+  });
+
   const stageTabs = useMemo(() => {
     const dynamicTabs = Array.from(
       new Set(retrospectiveSummaries.map((retro) => retro.stageName))
@@ -496,10 +538,16 @@ export default function RetroView() {
           <h1 className={styles.pageTitle}>회고</h1>
           <p className={styles.pageSubtitle}>지원 카드별 질문과 답변을 회고로 남겨보세요</p>
         </div>
-        <button className={styles.writeBtn} onClick={openWrite}>
-          <Plus size={16} />
-          회고 작성
-        </button>
+        <div className={styles.headerActions}>
+          <button className={styles.manageTemplatesBtn} onClick={() => setShowTemplateModal(true)}>
+            <LayoutList size={15} />
+            템플릿 관리
+          </button>
+          <button className={styles.writeBtn} onClick={openWrite}>
+            <Plus size={16} />
+            회고 작성
+          </button>
+        </div>
       </div>
 
       <div className={styles.body}>
@@ -572,6 +620,23 @@ export default function RetroView() {
           />
         </div>
       </div>
+
+      {showTemplateModal && (
+        <TemplateManageModal
+          templates={templates}
+          isSaving={
+            createTemplateMutation.isPending ||
+            updateTemplateMutation.isPending ||
+            deleteTemplateMutation.isPending
+          }
+          onClose={() => setShowTemplateModal(false)}
+          onCreate={(payload) => createTemplateMutation.mutateAsync(payload)}
+          onUpdate={(templateId, payload) =>
+            updateTemplateMutation.mutateAsync({ templateId, payload })
+          }
+          onDelete={(templateId) => deleteTemplateMutation.mutateAsync(templateId)}
+        />
+      )}
 
       {showWriteModal && (
         <WriteRetroModal
