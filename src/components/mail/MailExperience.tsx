@@ -126,7 +126,7 @@ function mapMessageToAiActions(
 
   const actions: MailAiAction[] = [];
 
-  if (classification.recommendedStageName || classification.stageCategory) {
+  if (classification.recommendedStageId !== null) {
     actions.push({
       id: `${message.messageId}-stage`,
       tone: 'blue',
