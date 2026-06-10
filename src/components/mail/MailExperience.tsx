@@ -17,6 +17,8 @@ import {
 import { ApiError } from '@/lib/api';
 import styles from '@/app/(dashboard)/mail/page.module.scss';
 
+const CLASSIFIED_MAIL_LIMIT = 60;
+
 function getApiErrorMessage(error: unknown, fallback: string) {
   if (error instanceof ApiError) {
     return error.message;
@@ -70,10 +72,18 @@ function getAvatarLabel(name: string) {
   return compact.slice(0, 2).toUpperCase();
 }
 
+function isRecruitmentMail(message: ClassifiedMailMessageResponse) {
+  return (
+    message.classification.recruitmentMail ??
+    message.classification.isRecruitmentMail ??
+    false
+  );
+}
+
 function getStatusLabel(message: ClassifiedMailMessageResponse) {
   const { classification } = message;
 
-  if (!classification.isRecruitmentMail) {
+  if (!isRecruitmentMail(message)) {
     return '일반 메일';
   }
 
@@ -110,7 +120,7 @@ function mapMessageToAiActions(
 ): MailAiAction[] {
   const { classification } = message;
 
-  if (!classification.isRecruitmentMail) {
+  if (!isRecruitmentMail(message)) {
     return [];
   }
 
@@ -151,7 +161,7 @@ function mapMessageToRecord(message: ClassifiedMailMessageResponse): MailRecord 
     subject: message.subject,
     preview: message.snippet,
     receivedAt: receivedLabel,
-    accent: classification.isRecruitmentMail ? 'blue' : undefined,
+    accent: isRecruitmentMail(message) ? 'blue' : undefined,
   };
   const detail: MailDetailData = {
     statusLabel,
@@ -179,7 +189,7 @@ function mapMessageToRecord(message: ClassifiedMailMessageResponse): MailRecord 
       items: [
         {
           label: '채용 메일',
-          value: classification.isRecruitmentMail ? '예' : '아니오',
+          value: isRecruitmentMail(message) ? '예' : '아니오',
         },
         {
           label: '단계 분류',
@@ -223,8 +233,8 @@ export default function MailExperience() {
   const [activeId, setActiveId] = useState<string | null>(null);
 
   const messagesQuery = useQuery({
-    queryKey: mailKeys.classifiedMessages(20),
-    queryFn: () => listClassifiedMailMessages(20),
+    queryKey: mailKeys.classifiedMessages(CLASSIFIED_MAIL_LIMIT),
+    queryFn: () => listClassifiedMailMessages(CLASSIFIED_MAIL_LIMIT),
   });
 
   const integrationsQuery = useQuery({

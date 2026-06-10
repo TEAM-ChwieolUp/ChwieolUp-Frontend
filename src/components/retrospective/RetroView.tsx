@@ -630,10 +630,12 @@ export default function RetroView() {
             deleteTemplateMutation.isPending
           }
           onClose={() => setShowTemplateModal(false)}
-          onCreate={(payload) => createTemplateMutation.mutateAsync(payload)}
-          onUpdate={(templateId, payload) =>
-            updateTemplateMutation.mutateAsync({ templateId, payload })
-          }
+          onCreate={async (payload) => {
+            await createTemplateMutation.mutateAsync(payload);
+          }}
+          onUpdate={async (templateId, payload) => {
+            await updateTemplateMutation.mutateAsync({ templateId, payload });
+          }}
           onDelete={(templateId) => deleteTemplateMutation.mutateAsync(templateId)}
         />
       )}

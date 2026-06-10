@@ -6,7 +6,8 @@ export type MailProviderParam = 'google' | 'naver' | 'outlook';
 export type MailStageCategory = 'IN_PROGRESS' | 'PASSED' | 'REJECTED';
 
 export interface MailClassificationResponse {
-  isRecruitmentMail: boolean;
+  recruitmentMail: boolean;
+  isRecruitmentMail?: boolean;
   stageCategory: MailStageCategory | null;
   recommendedStageId: number | null;
   recommendedStageName: string | null;
@@ -55,7 +56,10 @@ export async function listClassifiedMailMessages(limit = 20) {
   });
 
   return response.data.messages.filter(
-    (message) => message.classification.isRecruitmentMail
+    (message) =>
+      message.classification.recruitmentMail ??
+      message.classification.isRecruitmentMail ??
+      false
   );
 }
 
