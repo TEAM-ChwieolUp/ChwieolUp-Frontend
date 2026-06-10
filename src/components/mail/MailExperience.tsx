@@ -92,6 +92,19 @@ function getStatusLabel(message: ClassifiedMailMessageResponse) {
   return '채용 메일';
 }
 
+function getStageCategoryLabel(category: ClassifiedMailMessageResponse['classification']['stageCategory']) {
+  switch (category) {
+    case 'IN_PROGRESS':
+      return '진행 중';
+    case 'PASSED':
+      return '합격';
+    case 'REJECTED':
+      return '불합격';
+    default:
+      return '-';
+  }
+}
+
 function mapMessageToAiActions(
   message: ClassifiedMailMessageResponse
 ): MailAiAction[] {
@@ -129,7 +142,8 @@ function mapMessageToAiActions(
 function mapMessageToRecord(message: ClassifiedMailMessageResponse): MailRecord {
   const sender = getSenderParts(message.from);
   const receivedLabel = formatReceivedLabel(message.receivedAt);
-  const confidencePercent = Math.round(message.classification.confidence * 100);
+  const { classification } = message;
+  const confidencePercent = Math.round(classification.confidence * 100);
   const statusLabel = getStatusLabel(message);
   const thread: MailThread = {
     id: message.messageId,
@@ -137,7 +151,7 @@ function mapMessageToRecord(message: ClassifiedMailMessageResponse): MailRecord 
     subject: message.subject,
     preview: message.snippet,
     receivedAt: receivedLabel,
-    accent: message.classification.isRecruitmentMail ? 'blue' : undefined,
+    accent: classification.isRecruitmentMail ? 'blue' : undefined,
   };
   const detail: MailDetailData = {
     statusLabel,
@@ -157,7 +171,7 @@ function mapMessageToRecord(message: ClassifiedMailMessageResponse): MailRecord 
       {
         id: `${message.messageId}-reason`,
         tone: 'strong',
-        lines: [message.classification.reason],
+        lines: [classification.reason],
       },
     ],
     interviewNote: {
@@ -165,11 +179,30 @@ function mapMessageToRecord(message: ClassifiedMailMessageResponse): MailRecord 
       items: [
         {
           label: '채용 메일',
-          value: message.classification.isRecruitmentMail ? '예' : '아니오',
+          value: classification.isRecruitmentMail ? '예' : '아니오',
+        },
+        {
+          label: '단계 분류',
+          value: getStageCategoryLabel(classification.stageCategory),
+        },
+        {
+          label: '추천 단계',
+          value: classification.recommendedStageName ?? '-',
+        },
+        {
+          label: '추천 단계 ID',
+          value:
+            classification.recommendedStageId === null
+              ? '-'
+              : String(classification.recommendedStageId),
         },
         {
           label: '신뢰도',
           value: `${confidencePercent}%`,
+        },
+        {
+          label: '분류 사유',
+          value: classification.reason || '-',
         },
       ],
     },

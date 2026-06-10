@@ -206,7 +206,7 @@
 
   .noteItem {
     display: grid;
-    grid-template-columns: 88px minmax(0, 1fr);
+    grid-template-columns: 104px minmax(0, 1fr);
     align-items: start;
     gap: 12px;
     margin: 0;
@@ -228,6 +228,7 @@
       font-weight: 600;
       line-height: 20px;
       letter-spacing: -0.01em;
+      overflow-wrap: anywhere;
       word-break: keep-all;
     }
   }

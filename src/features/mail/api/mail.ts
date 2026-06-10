@@ -54,7 +54,9 @@ export async function listClassifiedMailMessages(limit = 20) {
     params: { limit },
   });
 
-  return response.data.messages;
+  return response.data.messages.filter(
+    (message) => message.classification.isRecruitmentMail
+  );
 }
 
 export async function listMailIntegrations() {
